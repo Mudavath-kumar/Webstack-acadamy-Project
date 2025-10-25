@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Heart, MessageCircle, Home } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { Menu, X, User, Heart, MessageCircle, Home, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { logout } from '../store/slices/authSlice';
+import toast from 'react-hot-toast';
 import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,6 +24,28 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserMenu && !event.target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu]);
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logout()).unwrap();
+      toast.success('Logged out successfully');
+      setShowUserMenu(false);
+      navigate('/');
+    } catch (error) {
+      toast.error('Error logging out');
+    }
+  };
 
   const navLinks = [
     { name: 'Explore', path: '/explore' },
@@ -120,54 +149,201 @@ const Navbar = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <ThemeToggle />
               
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  background: 'transparent',
-                  border: '2px solid var(--border-color)',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '0.5rem 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  cursor: 'pointer',
-                  color: 'var(--text-primary)',
-                  fontWeight: '500',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--primary)';
-                  e.currentTarget.style.background = 'var(--bg-secondary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                <Menu size={18} />
-                <User size={18} />
-              </motion.button>
+              {user ? (
+                <div className="user-menu-container" style={{ position: 'relative' }}>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    style={{
+                      background: 'transparent',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '0.5rem 1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      cursor: 'pointer',
+                      color: 'var(--text-primary)',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--primary)';
+                      e.currentTarget.style.background = 'var(--bg-secondary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <Menu size={18} />
+                    <User size={18} />
+                  </motion.button>
 
-              <Link to="/host-dashboard">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="btn-primary"
-                  style={{
-                    background: 'var(--gradient-sunset)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '0.6rem 1.25rem',
-                    color: 'white',
-                    fontWeight: '600',
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Become a Host
-                </motion.button>
-              </Link>
+                  <AnimatePresence>
+                    {showUserMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 0.5rem)',
+                          right: 0,
+                          background: 'var(--bg-primary)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-lg)',
+                          boxShadow: 'var(--shadow-2xl)',
+                          minWidth: '220px',
+                          overflow: 'hidden',
+                          zIndex: 1000,
+                        }}
+                      >
+                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                          <p style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                            {user.name}
+                          </p>
+                          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            {user.email}
+                          </p>
+                        </div>
+                        
+                        <div style={{ padding: '0.5rem' }}>
+                          <Link
+                            to="/profile"
+                            onClick={() => setShowUserMenu(false)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.75rem',
+                              padding: '0.75rem 1rem',
+                              borderRadius: 'var(--radius-md)',
+                              color: 'var(--text-primary)',
+                              textDecoration: 'none',
+                              transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'var(--bg-secondary)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <Settings size={18} />
+                            <span style={{ fontWeight: '500', fontSize: '0.9rem' }}>Profile Settings</span>
+                          </Link>
+                          
+                          {(user.role === 'host' || user.role === 'admin') && (
+                            <Link
+                              to="/host-dashboard"
+                              onClick={() => setShowUserMenu(false)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                padding: '0.75rem 1rem',
+                                borderRadius: 'var(--radius-md)',
+                                color: 'var(--text-primary)',
+                                textDecoration: 'none',
+                                transition: 'all 0.2s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'var(--bg-secondary)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                              }}
+                            >
+                              <LayoutDashboard size={18} />
+                              <span style={{ fontWeight: '500', fontSize: '0.9rem' }}>Host Dashboard</span>
+                            </Link>
+                          )}
+                          
+                          <button
+                            onClick={handleLogout}
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.75rem',
+                              padding: '0.75rem 1rem',
+                              borderRadius: 'var(--radius-md)',
+                              color: '#ef4444',
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              fontWeight: '500',
+                              fontSize: '0.9rem',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <LogOut size={18} />
+                            <span>Logout</span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <>
+                  <Link to="/login">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{
+                        background: 'transparent',
+                        border: '2px solid var(--border-color)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '0.6rem 1.25rem',
+                        color: 'var(--text-primary)',
+                        fontWeight: '600',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--primary)';
+                        e.currentTarget.style.background = 'var(--bg-secondary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color)';
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      Login
+                    </motion.button>
+                  </Link>
+
+                  <Link to="/signup">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="btn-primary"
+                      style={{
+                        background: 'var(--gradient-sunset)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '0.6rem 1.25rem',
+                        color: 'white',
+                        fontWeight: '600',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Sign Up
+                    </motion.button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 

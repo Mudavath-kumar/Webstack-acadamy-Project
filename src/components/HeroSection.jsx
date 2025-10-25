@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import SearchBar from './SearchBar';
+import SimpleSearchBar from './SimpleSearchBar';
 
 const HeroSection = () => {
   return (
@@ -159,9 +159,9 @@ const HeroSection = () => {
           </motion.p>
         </motion.div>
 
-        {/* Search Bar */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <SearchBar hero={true} />
+        {/* Enhanced Search Bar */}
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '0 1rem' }}>
+          <SimpleSearchBar />
         </div>
 
         {/* Trust Indicators */}

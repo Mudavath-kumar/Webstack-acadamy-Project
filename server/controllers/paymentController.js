@@ -2,17 +2,36 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import Booking from '../models/Booking.js';
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Initialize Razorpay (only if valid keys are provided)
+let razorpay;
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID !== 'rzp_test_demo_key') {
+  razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+} else {
+  console.log('⚠️  Razorpay not configured - running in development mode without payment integration');
+}
 
 // @desc    Create Razorpay order
 // @route   POST /api/v1/payments/create-order
 // @access  Private
 export const createOrder = async (req, res, next) => {
   try {
+    if (!razorpay) {
+      return res.status(200).json({
+        success: true,
+        message: 'Demo mode - Razorpay not configured',
+        data: {
+          id: 'demo_order_' + Date.now(),
+          amount: req.body.amount * 100,
+          currency: 'INR',
+          receipt: `booking_${req.body.bookingId}`,
+        },
+        key: process.env.RAZORPAY_KEY_ID,
+      });
+    }
+    
     const { amount, bookingId } = req.body;
 
     const options = {
@@ -45,6 +64,27 @@ export const verifyPayment = async (req, res, next) => {
       razorpay_signature,
       bookingId,
     } = req.body;
+    
+    // In demo mode, auto-approve payments
+    if (!razorpay) {
+      const booking = await Booking.findById(bookingId);
+      if (booking) {
+        booking.paymentInfo = {
+          paymentId: razorpay_payment_id || 'demo_payment_' + Date.now(),
+          orderId: razorpay_order_id || 'demo_order_' + Date.now(),
+          signature: 'demo_signature',
+          status: 'completed',
+          paidAt: Date.now(),
+        };
+        booking.status = 'confirmed';
+        await booking.save();
+      }
+      return res.status(200).json({
+        success: true,
+        message: 'Demo mode - Payment auto-verified',
+        data: booking,
+      });
+    }
 
     // Verify signature
     const sign = razorpay_order_id + '|' + razorpay_payment_id;
