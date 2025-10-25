@@ -1,7 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+// Use relative path for Vite proxy to work
+const API_URL = '/api/v1';
+
+// Configure axios defaults
+axios.defaults.timeout = 10000; // 10 second timeout
+axios.defaults.headers.common['Content-Type'] = 'application/json';
 
 // Get user from localStorage
 const user = JSON.parse(localStorage.getItem('user'));
@@ -23,12 +28,23 @@ export const register = createAsyncThunk(
     try {
       const response = await axios.post(`${API_URL}/auth/register`, userData);
       if (response.data.success) {
-        localStorage.setItem('user', JSON.stringify(response.data.data.user));
-        localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('token', response.data.token);
       }
-      return response.data.data;
+      return response.data;
     } catch (error) {
-      const message = error.response?.data?.message || error.message;
+      console.error('Register error:', error);
+      let message = 'Network error. Please check your connection.';
+      if (error.response) {
+        // Server responded with error
+        message = error.response.data?.message || 'Registration failed';
+      } else if (error.request) {
+        // Request made but no response
+        message = 'Cannot connect to server. Please try again.';
+      } else {
+        // Something else happened
+        message = error.message || 'Registration failed';
+      }
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -41,12 +57,20 @@ export const login = createAsyncThunk(
     try {
       const response = await axios.post(`${API_URL}/auth/login`, userData);
       if (response.data.success) {
-        localStorage.setItem('user', JSON.stringify(response.data.data.user));
-        localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('token', response.data.token);
       }
-      return response.data.data;
+      return response.data;
     } catch (error) {
-      const message = error.response?.data?.message || error.message;
+      console.error('Login error:', error);
+      let message = 'Network error. Please check your connection.';
+      if (error.response) {
+        message = error.response.data?.message || 'Login failed';
+      } else if (error.request) {
+        message = 'Cannot connect to server. Please try again.';
+      } else {
+        message = error.message || 'Login failed';
+      }
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -103,9 +127,9 @@ export const updatePassword = createAsyncThunk(
         },
       });
       if (response.data.success) {
-        localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('token', response.data.token);
       }
-      return response.data.data;
+      return response.data;
     } catch (error) {
       const message = error.response?.data?.message || error.message;
       return thunkAPI.rejectWithValue(message);
