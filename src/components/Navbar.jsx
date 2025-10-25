@@ -82,14 +82,22 @@ const Navbar = () => {
               style={{
                 width: '40px',
                 height: '40px',
-                background: 'var(--gradient-sunset)',
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                overflow: 'hidden',
               }}
             >
-              <Home size={24} color="white" />
+              <img 
+                src="https://backend-prod-hjlerckip39sk4no.s3-accelerate.amazonaws.com/images/2025/10/25/0198d335-0585-7738-b404-2c3b98ca1098/wsa-_logo_7430fb77.jpg"
+                alt="HomelyHub Logo"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
             </motion.div>
             <span
               style={{
