@@ -5,6 +5,9 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Home, ArrowRight, Sparkles } from 'lucide-react';
 import { login, reset } from '../store/slices/authSlice';
 import toast from 'react-hot-toast';
+import { firebaseAuth } from '../config/firebase';
+import { FcGoogle } from 'react-icons/fc';
+import { FaFacebook, FaGithub } from 'react-icons/fa';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -46,6 +49,56 @@ const Login = () => {
     }
 
     dispatch(login(formData));
+  };
+
+  // OAuth Handlers
+  const handleGoogleLogin = async () => {
+    try {
+      const { user: firebaseUser, error } = await firebaseAuth.signInWithGoogle();
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      if (firebaseUser) {
+        // Sync with backend if needed
+        toast.success('Signed in with Google! 🎉');
+        navigate(from, { replace: true });
+      }
+    } catch (error) {
+      toast.error('Failed to sign in with Google');
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    try {
+      const { user: firebaseUser, error } = await firebaseAuth.signInWithFacebook();
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      if (firebaseUser) {
+        toast.success('Signed in with Facebook! 🎉');
+        navigate(from, { replace: true });
+      }
+    } catch (error) {
+      toast.error('Failed to sign in with Facebook');
+    }
+  };
+
+  const handleGithubLogin = async () => {
+    try {
+      const { user: firebaseUser, error } = await firebaseAuth.signInWithGithub();
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      if (firebaseUser) {
+        toast.success('Signed in with GitHub! 🎉');
+        navigate(from, { replace: true });
+      }
+    } catch (error) {
+      toast.error('Failed to sign in with GitHub');
+    }
   };
 
   return (
@@ -379,7 +432,127 @@ const Login = () => {
             }}
           >
             <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
-            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>or</span>
+            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>or continue with</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+          </div>
+
+          {/* OAuth Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {/* Google Login */}
+            <motion.button
+              type="button"
+              onClick={handleGoogleLogin}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                width: '100%',
+                padding: '0.875rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                background: 'var(--bg-secondary)',
+                border: '2px solid var(--border-color)',
+                borderRadius: 'var(--radius-lg)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.75rem',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.background = 'var(--glass-bg)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.background = 'var(--bg-secondary)';
+              }}
+            >
+              <FcGoogle size={22} />
+              Sign in with Google
+            </motion.button>
+
+            {/* Facebook Login */}
+            <motion.button
+              type="button"
+              onClick={handleFacebookLogin}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                width: '100%',
+                padding: '0.875rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                background: 'var(--bg-secondary)',
+                border: '2px solid var(--border-color)',
+                borderRadius: 'var(--radius-lg)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.75rem',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#1877F2';
+                e.currentTarget.style.background = 'var(--glass-bg)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.background = 'var(--bg-secondary)';
+              }}
+            >
+              <FaFacebook size={22} color="#1877F2" />
+              Sign in with Facebook
+            </motion.button>
+
+            {/* GitHub Login */}
+            <motion.button
+              type="button"
+              onClick={handleGithubLogin}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                width: '100%',
+                padding: '0.875rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                background: 'var(--bg-secondary)',
+                border: '2px solid var(--border-color)',
+                borderRadius: 'var(--radius-lg)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.75rem',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#333';
+                e.currentTarget.style.background = 'var(--glass-bg)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.background = 'var(--bg-secondary)';
+              }}
+            >
+              <FaGithub size={22} />
+              Sign in with GitHub
+            </motion.button>
+          </div>
+
+          {/* Divider */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              margin: '2rem 0',
+            }}
+          >
             <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
           </div>
 

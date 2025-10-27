@@ -7,21 +7,24 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Explore from './pages/Explore';
 import ListingDetail from './pages/ListingDetail';
-import Checkout from './pages/Checkout';
+import Checkout from './pages/CheckoutEnhanced';
 import Trips from './pages/Trips';
 import Messages from './pages/Messages';
 import Wishlists from './pages/Wishlists';
-import Profile from './pages/Profile';
-import HostDashboard from './pages/HostDashboard';
+import Profile from './pages/ProfileEnhanced';
+import HostDashboard from './pages/HostDashboardEnhanced';
 import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
 import CategoryPage from './pages/CategoryPage';
 import DestinationPage from './pages/DestinationPage';
 import PropertyTypePage from './pages/PropertyTypePage';
 import AmenityPage from './pages/AmenityPage';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
+import Login from './pages/LoginNew';
+import Signup from './pages/SignupNew';
 import ProtectedRoute from './components/ProtectedRoute';
+import MapView from './pages/MapView';
+import AITripPlanner from './components/AITripPlanner';
+import AIChatAssistant from './components/AIChatAssistant';
 
 function App() {
   return (
@@ -76,9 +79,12 @@ function App() {
               <Route path="/destination/:destination" element={<DestinationPage />} />
               <Route path="/property/:type" element={<PropertyTypePage />} />
               <Route path="/amenity/:amenity" element={<AmenityPage />} />
+              <Route path="/map" element={<MapView />} />
+              <Route path="/trip-planner" element={<AITripPlanner />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
+          <AIChatAssistant />
           <Footer />
         </div>
       </Router>
