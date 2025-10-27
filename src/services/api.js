@@ -50,14 +50,20 @@ export const propertyAPI = {
   getAll: (params) => api.get('/properties', { params }),
   getOne: (id) => api.get(`/properties/${id}`),
   create: (data) => api.post('/properties', data),
+  createProperty: (data) => api.post('/properties', data),
   update: (id, data) => api.put(`/properties/${id}`, data),
+  updateProperty: (id, data) => api.put(`/properties/${id}`, data),
   delete: (id) => api.delete(`/properties/${id}`),
+  deleteProperty: (id) => api.delete(`/properties/${id}`),
+  getHostProperties: () => api.get('/properties/host/all'),
 };
 
 export const bookingAPI = {
   create: (data) => api.post('/bookings', data),
+  createBooking: (data) => api.post('/bookings', data),
   getOne: (id) => api.get(`/bookings/${id}`),
   cancel: (id) => api.put(`/bookings/${id}/cancel`),
+  cancelBooking: (id) => api.put(`/bookings/${id}/cancel`),
   getUserBookings: () => api.get('/bookings/user/all'),
   getHostBookings: () => api.get('/bookings/host/all'),
 };
@@ -65,4 +71,11 @@ export const bookingAPI = {
 export const userAPI = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
+};
+
+export const paymentAPI = {
+  createOrder: (data) => api.post('/payments/create-order', data),
+  verifyPayment: (data) => api.post('/payments/verify', data),
+  getPaymentDetails: (paymentId) => api.get(`/payments/${paymentId}`),
+  processRefund: (data) => api.post('/payments/refund', data),
 };

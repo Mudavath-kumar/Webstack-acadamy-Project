@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Menu, X, User, Heart, MessageCircle, Home, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { logout } from '../store/slices/authSlice';
+import { logout } from '../store/slices/firebaseAuthSlice';
 import toast from 'react-hot-toast';
 import ThemeToggle from './ThemeToggle';
 
@@ -14,7 +14,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.firebaseAuth);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -211,7 +211,7 @@ const Navbar = () => {
                       >
                         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)' }}>
                           <p style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-                            {user.name}
+                            {user.displayName || user.email}
                           </p>
                           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                             {user.email}
