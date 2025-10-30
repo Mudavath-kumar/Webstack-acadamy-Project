@@ -13,7 +13,7 @@ import MotionWrapper from '../components/MotionWrapper';
 const CheckoutEnhanced = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useSelector((state) => state.firebaseAuth);
+  const { user } = useSelector((state) => state.auth);
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
@@ -37,7 +37,7 @@ const CheckoutEnhanced = () => {
   });
 
   const [guestInfo, setGuestInfo] = useState({
-    fullName: user?.displayName || '',
+    fullName: user?.name || '',
     email: user?.email || '',
     phone: '',
     specialRequests: '',

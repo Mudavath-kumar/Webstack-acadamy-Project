@@ -1,45 +1,56 @@
-# Clacky Environment Configuration
-.clackyai/
-
-# Operating System Files
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-*~
-
-# Editor/IDE Files
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
 
 # Logs
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Temporary Files
-*.tmp
-*.temp
-.cache/
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Build Output
-dist/
-build/
-
-# Environment
+# Environment variables
 .env
 .env.local
 .env.*.local
+frontend/.env
+backend/.env
 
-# Vercel
-.vercel
-.vercel.json
+# Build output
+dist/
+frontend/dist/
+backend/dist/
+build/
+
+# Editor directories
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+coverage/
+.nyc_output/
+
+# Uploads
+uploads/
+backend/uploads/
+
+# Old server folder (if still exists)
+server/
+
+# Old files
+*.old
+*.bak

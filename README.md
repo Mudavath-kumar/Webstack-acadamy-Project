@@ -1,304 +1,342 @@
-# 🏡 HomelyHub - Find Where You Belong
+# 🏠 HomelyHub - Premium Home Rental Platform
 
-HomelyHub is a premium web platform similar to Airbnb, allowing users to discover and book unique places to stay around the world. Our platform connects travelers with hosts who offer personalized, comfortable accommodations ranging from cozy apartments to luxury villas.
+A full-stack MERN application for booking and managing property rentals, similar to Airbnb.
 
-![HomelyHub Banner](https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80)
+![Tech Stack](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
+![Express](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Node](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 
-## 🌟 What is HomelyHub?
+## ✨ Features
 
-HomelyHub is a web platform similar to Airbnb, allowing users to:
+### For Guests
+- 🔍 Advanced property search with filters
+- 📅 Real-time booking system
+- ⭐ Review and rating system
+- 💬 Direct messaging with hosts
+- 💳 Secure payment integration
+- 📱 Responsive design for all devices
+- 🗺️ Interactive map view
+- ❤️ Wishlist functionality
+- 🤖 AI chat assistant
 
-- **Find and book unique places to stay** - homes, villas, apartments, cabins, and more
-- **Host properties** - Property owners can list their accommodations and earn money by renting them out
-- **Personalized travel experiences** - Focuses on comfortable, authentic travel experiences tailored to your preferences
+### For Hosts
+- 🏠 Property listing management
+- 📊 Dashboard with analytics
+- 📅 Booking calendar
+- 💰 Earnings tracking
+- 📸 Image upload and management
+- 📝 Property description editor
+- 🔔 Real-time notifications
 
-## 🧩 Technology Stack (Architecture)
+### Authentication
+- 🔐 JWT-based authentication
+- 📧 Email verification
+- 🔑 Password reset functionality
+- 👤 User profile management
+- 🛡️ Role-based access control (Guest/Host/Admin)
 
-Built using the **MERN Stack** with modern best practices:
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Database** | MongoDB | Stores user, booking, and property details |
-| **Backend** | Express.js | Handles APIs, routes, and server logic |
-| **Frontend** | React.js | Creates a dynamic and responsive UI |
-| **Server Runtime** | Node.js | Executes backend code efficiently |
-| **State Management** | Redux | Manages data flow across components |
-| **API Design** | RESTful APIs | Enables scalable and secure client-server communication |
-
-### Frontend Technologies
-- **React 18** - Modern React with hooks and functional components
-- **Vite** - Lightning-fast build tool and dev server
-- **React Router DOM** - Client-side routing and navigation
-- **Framer Motion** - Smooth animations and transitions
-- **Lucide React** - Beautiful, consistent icon library
-- **CSS Custom Properties** - Theme management and styling
-
-**Design Principle:** Modular structure for scalability and maintainability.
-
-## ⚙️ Core Features
-
-### 🔐 User Authentication
-- **Email/Password Auth** - Traditional authentication
-- **Google OAuth** - One-click sign in with Google
-- **Facebook OAuth** - Social login with Facebook  
-- **GitHub OAuth** - Developer-friendly authentication
-- **Firebase Integration** - Secure, scalable auth system
-- **Profile Management** - Update personal information and password
-- **Role-based Access** - Separate dashboards for guests and hosts
-- **Session Persistence** - Stay logged in across sessions
-
-### 🔍 Search & Filters
-- **Advanced Search** - Find properties by location, dates, pricing, and amenities
-- **Smart Filters** - Filter by property type, bedrooms, guests, and more
-- **Category Browsing** - Explore properties by category (Beachfront, Mountain, City, etc.)
-- **Destination Pages** - Discover popular destinations worldwide
-
-### 🏠 View Listings
-- **Detailed Property Pages** - High-quality photos, descriptions, and amenities
-- **Interactive Image Galleries** - Browse through property images
-- **Reviews & Ratings** - Read guest reviews and ratings
-- **Interactive Maps** - See properties on interactive map with markers
-- **Map/List Toggle** - Switch between map and list view
-- **Dynamic Pricing** - Real-time price adjustments based on 7+ factors
-- **Similar Properties** - AI-powered recommendations
-
-### 🏗️ Property Management
-- **Host Dashboard** - Comprehensive management interface for property owners
-- **Add/Edit Listings** - Easily create and update property listings
-- **Media Upload** - Include multiple images and descriptions
-- **Pricing Control** - Set competitive pricing and availability
-- **Booking Management** - Track reservations and earnings
-
-### 📅 Booking System
-- **Real-time Availability** - Check property availability instantly
-- **Date Selection** - Choose check-in and check-out dates
-- **Guest Count** - Specify number of guests
-- **Instant Booking** - Get immediate confirmation
-- **Dynamic Pricing** - Seasonal, demand-based, and location pricing
-- **Price Breakdown** - Transparent pricing with cleaning fees and service charges
-- **Length of Stay Discounts** - Up to 35% off for monthly stays
-
-### 👤 User Profiles
-- **Personal Dashboard** - Manage bookings, wishlists, and settings
-- **Booking History** - View past and upcoming trips
-- **Wishlists** - Save favorite properties
-- **Messages** - Communicate with hosts
-- **Settings** - Update preferences and account details
-
-### 💳 Payment Integration
-- **Secure Payments** - Protected payment gateway for transactions
-- **Multiple Payment Methods** - Credit cards, debit cards, and digital wallets
-- **Currency Support** - Prices displayed in Indian Rupees (₹)
-- **Transaction History** - Track all payments and refunds
-
-### 🤖 AI-Powered Features
-- **AI Chat Assistant** - 24/7 chatbot for instant property queries
-- **AI Trip Planner** - Smart itinerary generator with budget estimates
-- **AI Search** - Natural language search with NLP
-- **AI Recommendations** - Personalized property suggestions
-- **AI Pricing** - Dynamic pricing suggestions for hosts
-- **Smart Filters** - Intelligent search result filtering
-
-### 🗺️ Map & Location
-- **Interactive Property Map** - View all properties on map
-- **Property Markers** - Click markers to see property details
-- **Current Location** - Find properties near you
-- **Zoom Controls** - Explore different areas
-- **Location-Based Search** - Search by proximity
-- **Distance Calculator** - Calculate distance from landmarks
-
-## 🎨 Design Features
-
-### Modern UI/UX
-- **Dark/Light Mode** - Toggle between themes for comfortable viewing
-- **Responsive Design** - Seamless experience across mobile, tablet, and desktop
-- **Glass Morphism** - Modern glassmorphic design elements
-- **Smooth Animations** - Framer Motion powered transitions
-- **Gradient Accents** - Beautiful gradient overlays and effects
-
-### Pages & Routes
-- **Home** - Hero section, categories, trending destinations, featured listings
-- **Explore** - Browse all properties with advanced filters
-- **Listing Detail** - Comprehensive property information
-- **Checkout** - Secure booking and payment process
-- **Trips** - View upcoming and past bookings
-- **Messages** - Host-guest communication
-- **Wishlists** - Saved properties
-- **Profile** - User settings and preferences
-- **Host Dashboard** - Property management for hosts
-- **Admin** - Platform administration (admin only)
-- **Category Pages** - Dedicated pages for each category
-- **Destination Pages** - City-specific property listings
-- **Property Type Pages** - Filter by accommodation type
-- **Amenity Pages** - Find properties with specific amenities
-
-## 📊 Project Statistics
-
-- **Total Pages:** 44+
-- **Total Features:** 112+
-- **Destinations:** 17+
-- **Authentication Methods:** 4 (Email, Google, Facebook, GitHub)
-- **AI Features:** 4 (Chat, Trip Planner, Search, Pricing)
-- **Lines of Code:** 10,000+
-- **Components:** 30+
-- **API Endpoints:** 15+
-
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn package manager
+
+- Node.js 16+ and npm
+- MongoDB Atlas account (or local MongoDB)
+- Git
 
 ### Installation
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/your-username/homelyhub.git
+git clone <your-repo-url>
 cd homelyhub
 ```
 
-2. **Install dependencies**
+2. **Install dependencies for both frontend and backend**
 ```bash
+# Install backend dependencies
+cd backend
+npm install
+
+# Install frontend dependencies
+cd ../frontend
 npm install
 ```
 
-3. **Start development server**
+3. **Configure environment variables**
+
+**Backend** (`backend/.env`):
 ```bash
+cd backend
+cp .env.example .env
+```
+
+Edit `backend/.env` and update:
+```env
+MONGODB_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=your_super_secret_jwt_key
+FRONTEND_URL=http://localhost:3000
+```
+
+**Frontend** (`frontend/.env`):
+```bash
+cd frontend
+cp .env.example .env
+```
+
+For local development, the default values work:
+```env
+VITE_API_URL=/api/v1
+```
+
+4. **Run the application**
+
+**Option 1: Run Both Together (Development)**
+
+Terminal 1 - Backend:
+```bash
+cd backend
+npm start
+# Backend runs on http://localhost:5000
+```
+
+Terminal 2 - Frontend:
+```bash
+cd frontend
+npm run dev
+# Frontend runs on http://localhost:3000
+```
+
+**Option 2: Run Separately**
+
+Backend only:
+```bash
+cd backend
+npm start
+```
+
+Frontend only:
+```bash
+cd frontend
 npm run dev
 ```
 
-4. **Open in browser**
-Navigate to `http://localhost:3000`
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-The optimized production build will be created in the `dist` folder.
+5. **Access the application**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000/api/v1
 
 ## 📁 Project Structure
 
 ```
 homelyhub/
-├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── Navbar.jsx
-│   │   ├── Footer.jsx
-│   │   ├── CategoryGrid.jsx
-│   │   ├── ListingCard.jsx
-│   │   ├── SearchBar.jsx
-│   │   ├── ThemeToggle.jsx
+├── frontend/              # React frontend application
+│   ├── src/
+│   │   ├── components/   # Reusable components
+│   │   ├── pages/        # Page components
+│   │   ├── store/        # Redux store
+│   │   ├── services/     # API services
 │   │   └── ...
-│   ├── pages/              # Page components
-│   │   ├── Home.jsx
-│   │   ├── Explore.jsx
-│   │   ├── ListingDetail.jsx
-│   │   ├── Checkout.jsx
-│   │   ├── CategoryPage.jsx
-│   │   ├── DestinationPage.jsx
-│   │   ├── PropertyTypePage.jsx
-│   │   ├── AmenityPage.jsx
-│   │   └── ...
-│   ├── context/            # React Context for state management
-│   │   └── ThemeContext.jsx
-│   ├── styles/             # Global styles
-│   │   └── globals.css
-│   ├── App.jsx             # Main app component with routing
-│   └── index.jsx           # Entry point
-├── public/                 # Static assets
-├── index.html             # HTML template
-├── vite.config.js         # Vite configuration
-└── package.json           # Dependencies and scripts
+│   ├── package.json
+│   └── README.md
+│
+├── backend/               # Express backend API
+│   ├── config/           # Configuration files
+│   ├── controllers/      # Route controllers
+│   ├── middleware/       # Custom middleware
+│   ├── models/           # Mongoose models
+│   ├── routes/           # API routes
+│   ├── utils/            # Utility functions
+│   ├── server.js         # Entry point
+│   ├── package.json
+│   └── README.md
+│
+└── README.md             # This file
 ```
 
-## 🎯 Key Highlights
+## 🛠️ Tech Stack
 
-### Category Pages
-- **Beachfront** - Ocean-view properties
-- **Cabins** - Cozy woodland retreats
-- **Mountain** - Alpine getaways
-- **Luxury** - High-end accommodations
-- **Ski-in/out** - Slope-side properties
-- **City** - Urban apartments and lofts
-- **Countryside** - Rural escapes
-- **Camping** - Outdoor experiences
+### Frontend
+- **React 19** - UI library
+- **Vite** - Build tool
+- **Redux Toolkit** - State management
+- **React Router v7** - Routing
+- **Axios** - HTTP client
+- **Framer Motion** - Animations
+- **Lucide React** - Icons
+- **React Hot Toast** - Notifications
 
-### Destination Pages
-- **Paris, France** - The City of Light
-- **Tokyo, Japan** - Modern meets traditional
-- **New York, USA** - The city that never sleeps
-- **Bali, Indonesia** - Tropical paradise
-- **London, UK** - Historic charm
-- **Dubai, UAE** - Luxury and innovation
+### Backend
+- **Node.js** - Runtime
+- **Express.js** - Web framework
+- **MongoDB** - Database
+- **Mongoose** - ODM
+- **JWT** - Authentication
+- **bcryptjs** - Password hashing
+- **Cloudinary** - Image storage
+- **Razorpay** - Payment gateway
+- **Nodemailer** - Email service
 
-### Property Types
-- **Houses** - Entire homes with privacy
-- **Apartments** - Modern city living
-- **Villas** - Luxurious properties with pools
-- **Cabins** - Nature retreats
-- **Condos** - Resort-style amenities
-- **Boutique Hotels** - Unique experiences
+## 🌐 Deployment
 
-### Amenity Filters
-- **Pools** - Properties with swimming pools
-- **Pet-Friendly** - Bring your furry friends
-- **Waterfront** - Beach, lake, or riverside
-- **Unique Stays** - One-of-a-kind accommodations
-- **Amazing Views** - Scenic vistas
-- **Accessible** - Wheelchair-accessible properties
+### Deploy Backend
 
-## 💰 Currency
+#### Option 1: Render (Recommended)
+1. Create account on [Render](https://render.com)
+2. Create new Web Service
+3. Connect your GitHub repo
+4. Configure:
+   - **Root Directory**: `backend`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+5. Add environment variables
+6. Deploy!
 
-All prices are displayed in **Indian Rupees (₹)** throughout the platform.
+#### Option 2: Railway
+1. Create account on [Railway](https://railway.app)
+2. New Project → Deploy from GitHub
+3. Set root directory to `backend`
+4. Add environment variables
+5. Deploy!
 
-## 🛠️ Development Tools
+#### Option 3: Heroku
+```bash
+heroku create your-backend-name
+heroku config:set MONGODB_URI=your_uri
+heroku config:set JWT_SECRET=your_secret
+# Add other env vars
+git subtree push --prefix backend heroku main
+```
 
-- **Vite** - Fast development server with HMR
-- **ESLint** - Code quality and consistency
-- **Git** - Version control
+### Deploy Frontend
 
-## 📱 Responsive Breakpoints
+#### Option 1: Vercel (Recommended)
+1. Install Vercel CLI: `npm i -g vercel`
+2. Navigate to frontend: `cd frontend`
+3. Run: `vercel`
+4. Set environment variable:
+   - `VITE_API_URL=https://your-backend.com/api/v1`
+5. Deploy: `vercel --prod`
 
-- **Mobile:** < 768px
-- **Tablet:** 768px - 1024px
-- **Desktop:** > 1024px
+#### Option 2: Netlify
+```bash
+cd frontend
+npm run build
+netlify deploy --prod --dir=dist
+```
 
-## 🌈 Color Themes
+Set environment variable in Netlify dashboard:
+- `VITE_API_URL=https://your-backend.com/api/v1`
 
-### Light Mode
-- Primary: #FF385C (Airbnb Red)
-- Background: #FFFFFF
-- Text: #222222
+#### Option 3: GitHub Pages
+Not recommended for this app (requires backend proxy)
 
-### Dark Mode
-- Primary: #FF385C
-- Background: #0F0F0F
-- Text: #F5F5F5
+### Important Deployment Notes
+
+1. **Update CORS**: In `backend/.env`, update `FRONTEND_URL` to your deployed frontend URL
+2. **Update API URL**: In `frontend/.env`, update `VITE_API_URL` to your deployed backend URL
+3. **Database**: Use MongoDB Atlas for production (never local MongoDB)
+4. **Security**: 
+   - Change `JWT_SECRET` to a strong random string
+   - Never commit `.env` files
+   - Use environment variables for all secrets
+
+## 🔧 Configuration
+
+### Backend Environment Variables
+
+See `backend/.env.example` for all available options.
+
+Required:
+- `MONGODB_URI` - MongoDB connection string
+- `JWT_SECRET` - Secret key for JWT
+- `FRONTEND_URL` - Frontend URL for CORS
+
+Optional:
+- `CLOUDINARY_*` - For image uploads
+- `RAZORPAY_*` - For payment processing
+- `SMTP_*` - For email functionality
+
+### Frontend Environment Variables
+
+See `frontend/.env.example` for all available options.
+
+Required:
+- `VITE_API_URL` - Backend API URL
+
+Optional:
+- `VITE_MAPBOX_TOKEN` - For map functionality
+- `VITE_GOOGLE_MAPS_API_KEY` - For Google Maps
+
+## 📚 API Documentation
+
+See `backend/README.md` for complete API documentation.
+
+### Quick Reference
+
+- Base URL: `http://localhost:5000/api/v1`
+- Authentication: JWT Bearer token in Authorization header
+- All endpoints return JSON
+
+Main endpoints:
+- `/auth/*` - Authentication
+- `/properties/*` - Property management
+- `/bookings/*` - Booking management
+- `/reviews/*` - Review system
+- `/messages/*` - Messaging
+- `/users/*` - User management
+
+## 🧪 Testing
+
+### Test Backend
+```bash
+cd backend
+npm start
+
+# In another terminal
+curl http://localhost:5000/api/v1/health
+```
+
+### Test Frontend
+```bash
+cd frontend
+npm run dev
+# Open http://localhost:3000 in browser
+```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create a feature branch: `git checkout -b feature-name`
+3. Commit your changes: `git commit -am 'Add feature'`
+4. Push to the branch: `git push origin feature-name`
 5. Open a Pull Request
 
-## 📄 License
+## 📝 License
 
 This project is licensed under the MIT License.
 
-## 👥 Team
+## 🙏 Acknowledgments
 
-Built with ❤️ by the HomelyHub development team.
+- Design inspired by Airbnb
+- Icons from Lucide React
+- Maps from Mapbox/Google Maps
 
-## 📞 Contact & Support
+## 📞 Support
 
-For support, feedback, or inquiries, please reach out to our team.
+For issues and questions:
+- Open an issue on GitHub
+- Check the documentation in `frontend/README.md` and `backend/README.md`
+
+## 🗺️ Roadmap
+
+- [ ] Real-time notifications with Socket.io
+- [ ] Multi-language support
+- [ ] Advanced search filters
+- [ ] Calendar integration
+- [ ] Mobile app (React Native)
+- [ ] Admin dashboard
+- [ ] Analytics and reporting
 
 ---
 
-**HomelyHub** - Your home away from home 🏡✨
+**Made with ❤️ by HomelyHub Team**
