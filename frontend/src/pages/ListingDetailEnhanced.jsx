@@ -26,7 +26,8 @@ const ListingDetailEnhanced = () => {
   const [favoriteCount, setFavoriteCount] = useState(0);
   const [shareCount, setShareCount] = useState(0);
 
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const isHost = user && user.role === 'host';
 
   // Mock listing data - in production, fetch from API
   const listing = {
@@ -126,6 +127,13 @@ const ListingDetailEnhanced = () => {
 
   const handleBooking = (e) => {
     e.preventDefault();
+    
+    // Prevent hosts from booking
+    if (isHost) {
+      toast.error('Hosts cannot book properties. Please use a guest account to make bookings.');
+      return;
+    }
+    
     window.location.href = `/checkout?listingId=${id}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`;
   };
 
@@ -659,6 +667,30 @@ const ListingDetailEnhanced = () => {
                 padding: 'var(--spacing-xl)',
               }}
             >
+              {isHost ? (
+                /* Host View - Cannot Book */
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                    <Shield size={48} color="var(--primary)" style={{ margin: '0 auto' }} />
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: 'var(--spacing-sm)' }}>
+                    Host View
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: 'var(--spacing-lg)' }}>
+                    As a host, you can view property details but cannot make bookings.
+                  </p>
+                  <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--spacing-md)' }}>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      💡 To book properties, please use a guest account.
+                    </p>
+                  </div>
+                  <a href="/host-dashboard" className="btn-gradient" style={{ display: 'inline-block', textDecoration: 'none', padding: 'var(--spacing-md) var(--spacing-xl)' }}>
+                    Go to Host Dashboard
+                  </a>
+                </div>
+              ) : (
+                /* Guest View - Can Book */
+                <>
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: 'var(--spacing-sm)' }}>
                   <span style={{ fontSize: '2rem', fontWeight: '700' }}>₹{listing.price.toLocaleString()}</span>
@@ -745,6 +777,8 @@ const ListingDetailEnhanced = () => {
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: 'var(--spacing-md)' }}>
                 You won't be charged yet
               </p>
+              </>
+              )}
             </motion.div>
           </div>
         </div>
