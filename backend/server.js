@@ -52,6 +52,7 @@ import reviewRoutes from './routes/reviews.js';
 import paymentRoutes from './routes/payments.js';
 import messageRoutes from './routes/messages.js';
 import favoriteRoutes from './routes/favorites.js';
+import otpRoutes from './routes/otp.js';
 
 // Mount routes
 app.use('/api/v1/auth', authRoutes);
@@ -62,6 +63,7 @@ app.use('/api/v1/reviews', reviewRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/messages', messageRoutes);
 app.use('/api/v1/favorites', favoriteRoutes);
+app.use('/api/v1/otp', otpRoutes);
 
 // Health check route
 app.get('/api/v1/health', (req, res) => {

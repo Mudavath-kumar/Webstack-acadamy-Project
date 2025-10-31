@@ -2,14 +2,21 @@ import Booking from '../models/Booking.js';
 import Property from '../models/Property.js';
 
 // Helper function to check availability
-const checkAvailability = async (propertyId, checkIn, checkOut) => {
-  const overlappingBookings = await Booking.find({
+const checkAvailability = async (propertyId, checkIn, checkOut, excludeBookingId = null) => {
+  const query = {
     property: propertyId,
     status: { $in: ['confirmed', 'pending'] },
     $or: [
       { checkIn: { $lt: checkOut }, checkOut: { $gt: checkIn } },
     ],
-  });
+  };
+
+  // Exclude current booking when modifying
+  if (excludeBookingId) {
+    query._id = { $ne: excludeBookingId };
+  }
+
+  const overlappingBookings = await Booking.find(query);
 
   return overlappingBookings.length === 0;
 };
@@ -122,7 +129,7 @@ export const getBooking = async (req, res, next) => {
   }
 };
 
-// @desc    Cancel booking
+// @desc    Cancel booking (with OTP verification)
 // @route   PUT /api/v1/bookings/:id/cancel
 // @access  Private
 export const cancelBooking = async (req, res, next) => {
@@ -150,17 +157,152 @@ export const cancelBooking = async (req, res, next) => {
       });
     }
 
+    // Check if cancellation is within allowed timeframe (e.g., 24 hours before check-in)
+    const now = new Date();
+    const checkInDate = new Date(booking.checkIn);
+    const hoursUntilCheckIn = (checkInDate - now) / (1000 * 60 * 60);
+
+    if (hoursUntilCheckIn < 24) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot cancel booking less than 24 hours before check-in',
+      });
+    }
+
     booking.status = 'cancelled';
     booking.cancellation = {
       cancelledBy: req.user.id,
       cancelledAt: Date.now(),
-      reason: req.body.reason,
+      reason: req.body.reason || 'User requested cancellation',
     };
 
     await booking.save();
 
     res.status(200).json({
       success: true,
+      message: 'Booking cancelled successfully',
+      data: booking,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Modify/Update booking (with OTP verification required)
+// @route   PUT /api/v1/bookings/:id/modify
+// @access  Private
+export const modifyBooking = async (req, res, next) => {
+  try {
+    const { checkIn, checkOut, guests, otpVerified } = req.body;
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found',
+      });
+    }
+
+    if (booking.user.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to modify this booking',
+      });
+    }
+
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot modify cancelled booking',
+      });
+    }
+
+    if (booking.status === 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot modify completed booking',
+      });
+    }
+
+    // Require OTP verification for modifications
+    if (!otpVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'OTP verification required to modify booking. Please verify OTP first.',
+        requiresOTP: true,
+      });
+    }
+
+    // If dates are being changed, check availability
+    if (checkIn || checkOut) {
+      const newCheckIn = checkIn ? new Date(checkIn) : booking.checkIn;
+      const newCheckOut = checkOut ? new Date(checkOut) : booking.checkOut;
+
+      // Check if new dates are available
+      const isAvailable = await checkAvailability(
+        booking.property,
+        newCheckIn,
+        newCheckOut,
+        req.params.id // Exclude current booking from check
+      );
+
+      if (!isAvailable) {
+        return res.status(400).json({
+          success: false,
+          message: 'Property not available for selected dates',
+        });
+      }
+
+      booking.checkIn = newCheckIn;
+      booking.checkOut = newCheckOut;
+
+      // Recalculate nights and pricing
+      const nights = Math.ceil((newCheckOut - newCheckIn) / (1000 * 60 * 60 * 24));
+      booking.nights = nights;
+
+      const property = await Property.findById(booking.property);
+      const basePrice = property.pricing.basePrice;
+      const subtotal = basePrice * nights;
+      const serviceFee = subtotal * 0.1;
+      const cleaningFee = property.pricing.cleaningFee || 0;
+      const total = subtotal + serviceFee + cleaningFee;
+
+      booking.pricing = {
+        basePrice,
+        nights,
+        subtotal,
+        serviceFee,
+        cleaningFee,
+        total,
+      };
+    }
+
+    // Update guests if provided
+    if (guests) {
+      booking.guests = guests;
+      booking.totalGuests = guests.adults + (guests.children || 0);
+    }
+
+    // Track modification history
+    if (!booking.modifications) {
+      booking.modifications = [];
+    }
+
+    booking.modifications.push({
+      modifiedBy: req.user.id,
+      modifiedAt: Date.now(),
+      changes: {
+        checkIn,
+        checkOut,
+        guests,
+      },
+    });
+
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Booking modified successfully',
       data: booking,
     });
   } catch (error) {

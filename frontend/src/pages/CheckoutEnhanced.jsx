@@ -9,6 +9,7 @@ import {
 import { bookingAPI, paymentAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import MotionWrapper from '../components/MotionWrapper';
+import OTPVerificationModal from '../components/OTPVerificationModal';
 
 const CheckoutEnhanced = () => {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ const CheckoutEnhanced = () => {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [currentBookingId, setCurrentBookingId] = useState(null);
   
   // Get booking data from location state or use demo data
   const [booking, setBooking] = useState(location.state?.booking || {
@@ -127,15 +130,11 @@ const CheckoutEnhanced = () => {
 
       if (verifyResponse.data.success) {
         toast.dismiss();
-        toast.success('Payment successful! 🎉', { duration: 5000 });
+        toast.success('Payment successful! Please verify OTP to confirm booking.', { duration: 5000 });
         
-        // Navigate to success page
-        navigate('/trips', { 
-          state: { 
-            bookingSuccess: true, 
-            bookingId: bookingId 
-          } 
-        });
+        // Show OTP verification modal after payment success
+        setCurrentBookingId(bookingId);
+        setShowOTPModal(true);
       } else {
         throw new Error('Payment verification failed');
       }
@@ -152,6 +151,17 @@ const CheckoutEnhanced = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     await handlePayment();
+  };
+
+  // Handle OTP verification success
+  const handleOTPVerificationSuccess = (booking) => {
+    toast.success('Booking confirmed successfully! 🎉');
+    navigate('/trips', {
+      state: {
+        bookingSuccess: true,
+        bookingId: booking._id,
+      },
+    });
   };
 
   if (!booking.property) {
@@ -480,6 +490,14 @@ const CheckoutEnhanced = () => {
           animation: spin 1s linear infinite;
         }
       `}</style>
+
+      {/* OTP Verification Modal */}
+      <OTPVerificationModal
+        isOpen={showOTPModal}
+        onClose={() => setShowOTPModal(false)}
+        bookingId={currentBookingId}
+        onVerificationSuccess={handleOTPVerificationSuccess}
+      />
     </div>
   );
 };

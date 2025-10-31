@@ -10,13 +10,16 @@ const ListingCard = ({ listing }) => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(listing.favoriteCount || 0);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  
+  // MongoDB uses _id, but mock data uses id
+  const propertyId = listing._id || listing.id;
 
   useEffect(() => {
     // Check if property is in user's favorites
-    if (isAuthenticated && listing.id) {
+    if (isAuthenticated && propertyId) {
       checkFavoriteStatus();
     }
-  }, [isAuthenticated, listing.id]);
+  }, [isAuthenticated, propertyId]);
 
   const checkFavoriteStatus = async () => {
     try {
@@ -24,7 +27,7 @@ const ListingCard = ({ listing }) => {
       if (!token) return;
 
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/favorites/check/${listing.id}`,
+        `${import.meta.env.VITE_API_URL}/favorites/check/${propertyId}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -54,7 +57,7 @@ const ListingCard = ({ listing }) => {
       if (isFavorited) {
         // Remove from favorites
         await axios.delete(
-          `${import.meta.env.VITE_API_URL}/favorites/${listing.id}`,
+          `${import.meta.env.VITE_API_URL}/favorites/${propertyId}`,
           {
             headers: { Authorization: `Bearer ${token}` }
           }
@@ -65,7 +68,7 @@ const ListingCard = ({ listing }) => {
       } else {
         // Add to favorites
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/favorites/${listing.id}`,
+          `${import.meta.env.VITE_API_URL}/favorites/${propertyId}`,
           {},
           {
             headers: { Authorization: `Bearer ${token}` }
@@ -87,7 +90,7 @@ const ListingCard = ({ listing }) => {
       transition={{ duration: 0.3 }}
       style={{ position: 'relative' }}
     >
-      <Link to={`/listing/${listing.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <Link to={`/listing/${propertyId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div
           className="card"
           style={{

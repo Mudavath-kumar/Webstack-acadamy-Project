@@ -62,8 +62,10 @@ export const bookingAPI = {
   create: (data) => api.post('/bookings', data),
   createBooking: (data) => api.post('/bookings', data),
   getOne: (id) => api.get(`/bookings/${id}`),
-  cancel: (id) => api.put(`/bookings/${id}/cancel`),
-  cancelBooking: (id) => api.put(`/bookings/${id}/cancel`),
+  cancel: (id, data) => api.put(`/bookings/${id}/cancel`, data),
+  cancelBooking: (id, data) => api.put(`/bookings/${id}/cancel`, data),
+  modify: (id, data) => api.put(`/bookings/${id}/modify`, data),
+  modifyBooking: (id, data) => api.put(`/bookings/${id}/modify`, data),
   getUserBookings: () => api.get('/bookings/user/all'),
   getHostBookings: () => api.get('/bookings/host/all'),
 };
@@ -80,4 +82,10 @@ export const paymentAPI = {
   getPaymentDetails: (paymentId) => api.get(`/payments/${paymentId}`),
   getUserPayments: () => api.get('/payments/my-payments'),
   processRefund: (data) => api.post('/payments/refund', data),
+};
+
+export const otpAPI = {
+  generate: (data) => api.post('/otp/generate', data),
+  verify: (data) => api.post('/otp/verify', data),
+  resend: (data) => api.post('/otp/resend', data),
 };
