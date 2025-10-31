@@ -1,17 +1,39 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, MapPin, DollarSign, Image, Settings, 
-  ChevronRight, ChevronLeft, Check, Upload,
+  ChevronRight, ChevronLeft, Check, Upload, RefreshCw,
   Wifi, Car, Waves, Shield, Coffee, Tv,
   Wind, Zap, Dumbbell, Flame, Users, Bed, Bath
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { propertyAPI } from '../services/api';
 
 const BecomeHost = () => {
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.firebaseAuth || {});
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Error boundary
+  if (error) {
+    return (
+      <div style={{ paddingTop: '100px', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: '500px', padding: 'var(--spacing-2xl)' }}>
+          <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Oops! Something went wrong</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-xl)' }}>
+            {error.message || 'An unexpected error occurred'}
+          </p>
+          <button onClick={() => { setError(null); window.location.reload(); }} className="btn-primary">
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
     title: '',
@@ -148,13 +170,93 @@ const BecomeHost = () => {
   };
 
   const handleSubmit = async () => {
+    // Validate required fields
+    if (!formData.title || !formData.description) {
+      toast.error('Please fill in property title and description');
+      setCurrentStep(1);
+      return;
+    }
+
+    if (!formData.address || !formData.city || !formData.country) {
+      toast.error('Please fill in complete address information');
+      setCurrentStep(2);
+      return;
+    }
+
+    if (!formData.basePrice || formData.basePrice <= 0) {
+      toast.error('Please enter a valid price');
+      setCurrentStep(6);
+      return;
+    }
+
+    if (!user) {
+      toast.error('Please login to list your property');
+      navigate('/login');
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      toast.success('Property listed successfully! 🎉');
-      setTimeout(() => {
-        navigate('/host-dashboard');
-      }, 1500);
+      // Prepare property data for API
+      const propertyData = {
+        title: formData.title,
+        description: formData.description,
+        propertyType: formData.propertyType,
+        category: formData.category,
+        location: {
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          zipCode: formData.zipCode,
+          coordinates: formData.latitude && formData.longitude ? {
+            lat: parseFloat(formData.latitude),
+            lng: parseFloat(formData.longitude)
+          } : undefined,
+        },
+        capacity: {
+          guests: formData.guests,
+          bedrooms: formData.bedrooms,
+          beds: formData.beds,
+          bathrooms: formData.bathrooms,
+        },
+        amenities: formData.amenities,
+        images: formData.images.length > 0 ? formData.images : [
+          'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80'
+        ],
+        pricing: {
+          basePrice: parseFloat(formData.basePrice),
+          cleaningFee: parseFloat(formData.cleaningFee) || 0,
+          weeklyDiscount: parseFloat(formData.weeklyDiscount) || 0,
+          monthlyDiscount: parseFloat(formData.monthlyDiscount) || 0,
+        },
+        houseRules: {
+          checkIn: formData.checkIn,
+          checkOut: formData.checkOut,
+          cancellationPolicy: formData.cancellationPolicy,
+          instantBook: formData.instantBook,
+          minNights: formData.minNights,
+          maxNights: formData.maxNights,
+        },
+      };
+
+      // Call API to create property
+      const response = await propertyAPI.createProperty(propertyData);
+
+      if (response.data.success) {
+        toast.success('Property listed successfully! 🎉', { duration: 5000 });
+        setTimeout(() => {
+          navigate('/host-dashboard');
+        }, 2000);
+      } else {
+        throw new Error(response.data.message || 'Failed to create listing');
+      }
     } catch (error) {
-      toast.error('Failed to create listing. Please try again.');
+      console.error('Error creating property:', error);
+      toast.error(error.response?.data?.message || 'Failed to create listing. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -976,15 +1078,32 @@ const BecomeHost = () => {
           ) : (
             <button
               onClick={handleSubmit}
+              disabled={isSubmitting}
               className="btn-primary"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 'var(--spacing-sm)',
+                opacity: isSubmitting ? 0.7 : 1,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
               }}
             >
-              <Check size={20} />
-              Publish Listing
+              {isSubmitting ? (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <RefreshCw size={20} />
+                  </motion.div>
+                  Publishing...
+                </>
+              ) : (
+                <>
+                  <Check size={20} />
+                  Publish Listing
+                </>
+              )}
             </button>
           )}
         </div>

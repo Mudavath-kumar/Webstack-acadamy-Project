@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, CheckCircle, Home as HomeIcon, Shield, Clock, Heart } from 'lucide-react';
@@ -7,8 +7,57 @@ import CategoryGrid from '../components/CategoryGrid';
 import CTASection from '../components/CTASection';
 import MotionWrapper from '../components/MotionWrapper';
 import ListingCard from '../components/ListingCard';
+import { propertyAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Home = () => {
+  const [featuredListings, setFeaturedListings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Helper function to normalize API property data to match ListingCard format
+  const normalizeProperty = (property) => {
+    return {
+      id: property._id,
+      _id: property._id,
+      title: property.title,
+      location: `${property.location?.city || ''}, ${property.location?.country || ''}`.trim(),
+      image: property.images && property.images.length > 0 
+        ? (typeof property.images[0] === 'string' ? property.images[0] : property.images[0].url)
+        : 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80',
+      price: property.pricing?.basePrice || property.price || 0,
+      rating: property.rating?.average || property.rating || 4.5,
+      guests: property.capacity?.guests || property.guests || 1,
+      bedrooms: property.capacity?.bedrooms || property.bedrooms || 1,
+      beds: property.capacity?.beds || property.beds || 1,
+      featured: property.featured || false,
+      favoriteCount: property.favoriteCount || 0,
+    };
+  };
+
+  // Fetch real properties from API
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const response = await propertyAPI.getAll({ limit: 8, sort: '-rating.average' });
+        if (response.data.success && response.data.data && response.data.data.length > 0) {
+          const normalizedProperties = response.data.data.map(normalizeProperty);
+          setFeaturedListings(normalizedProperties);
+        } else {
+          // No properties yet, use mock data
+          setFeaturedListings(mockFeaturedListings);
+        }
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+        // Keep mock data as fallback
+        setFeaturedListings(mockFeaturedListings);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
   // Mock trending destinations
   const trendingDestinations = [
     {
@@ -55,8 +104,8 @@ const Home = () => {
     },
   ];
 
-  // Mock featured listings
-  const featuredListings = [
+  // Mock featured listings (fallback)
+  const mockFeaturedListings = [
     {
       id: 1,
       title: 'Luxury Villa with Ocean View',

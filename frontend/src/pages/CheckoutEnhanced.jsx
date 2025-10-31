@@ -15,6 +15,14 @@ const CheckoutEnhanced = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
+
+  // Prevent hosts from booking properties
+  useEffect(() => {
+    if (user && user.role === 'host') {
+      toast.error('Hosts cannot book properties. Please use a guest account to make bookings.');
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
@@ -65,6 +73,13 @@ const CheckoutEnhanced = () => {
       return;
     }
 
+    // Double-check host restriction
+    if (user.role === 'host') {
+      toast.error('Hosts cannot book properties. Please switch to a guest account.');
+      navigate('/', { replace: true });
+      return;
+    }
+
     if (!guestInfo.fullName || !guestInfo.email || !guestInfo.phone) {
       toast.error('Please fill in all guest information');
       return;
@@ -73,13 +88,30 @@ const CheckoutEnhanced = () => {
     setIsProcessing(true);
 
     try {
+      // Validate property ID
+      if (!booking.property?._id || booking.property._id === 'demo-property') {
+        toast.error('Please select a valid property from the listings page');
+        navigate('/explore');
+        return;
+      }
+
       // Create booking first
       const bookingResponse = await bookingAPI.createBooking({
         property: booking.property._id,
         checkIn: booking.checkIn,
         checkOut: booking.checkOut,
-        guests: booking.guests,
-        totalPrice: total / 100, // Convert paise to rupees for booking
+        guests: {
+          adults: booking.guests || 2,
+          children: 0,
+          infants: 0
+        },
+        pricing: {
+          basePrice: booking.pricePerNight || 0,
+          cleaningFee: booking.cleaningFee || 0,
+          serviceFee: booking.serviceFee || 0,
+          taxes: booking.gst || 0,
+          total: total / 100
+        },
         guestInfo: guestInfo,
       });
 

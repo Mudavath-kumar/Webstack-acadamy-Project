@@ -29,7 +29,22 @@ const Login = () => {
     if (isSuccess && user) {
       toast.success('Welcome back! 🎉');
       dispatch(reset());
-      navigate(from, { replace: true });
+      
+      // Redirect based on user role and intended destination
+      if (from !== '/' && from !== '/login') {
+        // If user was trying to access a protected page, go there
+        navigate(from, { replace: true });
+      } else if (user.role === 'host') {
+        toast.success('Redirecting to your Host Dashboard...', { duration: 2500 });
+        setTimeout(() => {
+          navigate('/host-dashboard', { replace: true });
+        }, 1000);
+      } else {
+        toast.success('Explore amazing properties...', { duration: 2500 });
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 1000);
+      }
     }
   }, [isError, isSuccess, message, user, navigate, dispatch, from]);
 

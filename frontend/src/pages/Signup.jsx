@@ -32,7 +32,19 @@ const Signup = () => {
     if (isSuccess && user) {
       toast.success('Account created successfully! 🎉');
       dispatch(reset());
-      navigate(from, { replace: true });
+      
+      // Redirect based on user role
+      if (user.role === 'host') {
+        toast.success('Welcome Host! Redirecting to your dashboard...', { duration: 3000 });
+        setTimeout(() => {
+          navigate('/host-dashboard', { replace: true });
+        }, 1500);
+      } else {
+        toast.success('Welcome! Explore amazing properties...', { duration: 3000 });
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 1500);
+      }
     }
   }, [isError, isSuccess, message, user, navigate, dispatch, from]);
 

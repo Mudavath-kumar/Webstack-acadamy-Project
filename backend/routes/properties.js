@@ -14,6 +14,7 @@ const router = express.Router();
 
 router.get('/', getProperties);
 router.get('/my-properties', protect, authorize('host', 'admin'), getMyProperties);
+router.get('/host/all', protect, authorize('host', 'admin'), getMyProperties);
 router.get('/:id', getProperty);
 router.post('/', protect, authorize('host', 'admin'), createProperty);
 router.put('/:id', protect, authorize('host', 'admin'), updateProperty);

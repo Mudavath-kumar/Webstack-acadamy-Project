@@ -22,6 +22,7 @@ import AmenityPage from './pages/AmenityPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ProtectedRoute from './components/ProtectedRoute';
+import HostRoute from './components/HostRoute';
 import MapView from './pages/MapView';
 import AITripPlanner from './components/AITripPlanner';
 import AIChatAssistant from './components/AIChatAssistant';
@@ -75,7 +76,8 @@ function App() {
               <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
               <Route path="/wishlists" element={<ProtectedRoute><Wishlists /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/host-dashboard" element={<ProtectedRoute><HostDashboard /></ProtectedRoute>} />
+              <Route path="/host-dashboard" element={<HostRoute><HostDashboard /></HostRoute>} />
+              <Route path="/become-host" element={<HostRoute><BecomeHost /></HostRoute>} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/category/:category" element={<CategoryPage />} />
               <Route path="/destination/:destination" element={<DestinationPage />} />
@@ -83,7 +85,6 @@ function App() {
               <Route path="/amenity/:amenity" element={<AmenityPage />} />
               <Route path="/map" element={<MapView />} />
               <Route path="/trip-planner" element={<AITripPlanner />} />
-              <Route path="/become-host" element={<ProtectedRoute><BecomeHost /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

@@ -156,31 +156,46 @@ const Navbar = () => {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               {/* Become a Host Button */}
-              <Link to="/become-host">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '0.5rem 1rem',
-                    color: 'var(--text-primary)',
-                    fontWeight: '600',
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--text-primary)';
-                  }}
-                >
-                  🏠 Become a Host
-                </motion.button>
-              </Link>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  if (user) {
+                    // User is logged in
+                    if (user.role === 'host') {
+                      navigate('/host-dashboard');
+                    } else {
+                      navigate('/become-host');
+                    }
+                  } else {
+                    // User not logged in - save intended destination and go to login
+                    toast.info('🔐 Please log in or sign up to become a host');
+                    navigate('/login', { state: { from: { pathname: '/become-host' } } });
+                  }
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '0.65rem 1.25rem',
+                  color: 'white',
+                  fontWeight: '600',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
+                }}
+              >
+                🏠 {user && user.role === 'host' ? 'Host Dashboard' : 'Become a Host'}
+              </motion.button>
 
               <ThemeToggle />
               

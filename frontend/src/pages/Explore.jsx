@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Filter, SlidersHorizontal, X } from 'lucide-react';
+import { Filter, SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import ListingCard from '../components/ListingCard';
 import MotionWrapper from '../components/MotionWrapper';
 
 const Explore = () => {
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12);
   const [filters, setFilters] = useState({
     priceMin: 0,
     priceMax: 1000,
@@ -287,14 +289,99 @@ const Explore = () => {
                   ? 'repeat(auto-fill, minmax(280px, 1fr))'
                   : 'repeat(auto-fill, minmax(300px, 1fr))',
                 gap: 'var(--spacing-xl)',
+                marginBottom: 'var(--spacing-2xl)',
               }}
             >
-              {listings.map((listing, index) => (
-                <MotionWrapper key={listing.id} delay={index * 0.05}>
-                  <ListingCard listing={listing} />
-                </MotionWrapper>
-              ))}
+              {(() => {
+                const indexOfLastItem = currentPage * itemsPerPage;
+                const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+                const currentListings = listings.slice(indexOfFirstItem, indexOfLastItem);
+                
+                return currentListings.map((listing, index) => (
+                  <MotionWrapper key={listing.id} delay={index * 0.05}>
+                    <ListingCard listing={listing} />
+                  </MotionWrapper>
+                ));
+              })()}
             </div>
+
+            {/* Pagination */}
+            {listings.length > itemsPerPage && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-2xl)' }}>
+                {/* Previous Button */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: 'var(--spacing-md) var(--spacing-lg)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '2px solid var(--border-color)',
+                    background: currentPage === 1 ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                    color: currentPage === 1 ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                    fontWeight: '600',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    opacity: currentPage === 1 ? 0.5 : 1,
+                  }}
+                >
+                  <ChevronLeft size={20} />
+                  Previous
+                </motion.button>
+
+                {/* Page Numbers */}
+                <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                  {Array.from({ length: Math.ceil(listings.length / itemsPerPage) }, (_, i) => i + 1).map(pageNum => (
+                    <motion.button
+                      key={pageNum}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setCurrentPage(pageNum)}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '2px solid var(--border-color)',
+                        background: currentPage === pageNum ? 'var(--primary)' : 'var(--bg-primary)',
+                        color: currentPage === pageNum ? 'white' : 'var(--text-primary)',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      {pageNum}
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* Next Button */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(listings.length / itemsPerPage)))}
+                  disabled={currentPage === Math.ceil(listings.length / itemsPerPage)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: 'var(--spacing-md) var(--spacing-lg)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '2px solid var(--border-color)',
+                    background: currentPage === Math.ceil(listings.length / itemsPerPage) ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                    color: currentPage === Math.ceil(listings.length / itemsPerPage) ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                    fontWeight: '600',
+                    cursor: currentPage === Math.ceil(listings.length / itemsPerPage) ? 'not-allowed' : 'pointer',
+                    opacity: currentPage === Math.ceil(listings.length / itemsPerPage) ? 0.5 : 1,
+                  }}
+                >
+                  Next
+                  <ChevronRight size={20} />
+                </motion.button>
+              </div>
+            )}
           </div>
         </div>
       </div>
