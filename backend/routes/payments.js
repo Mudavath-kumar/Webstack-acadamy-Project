@@ -1,14 +1,14 @@
 import express from 'express';
 import {
-  createOrder,
-  processPayment,
-  verifyPayment,
-  getPaymentDetails,
-  getUserPayments,
-  processRefund,
-  getPaymentStats,
+    createOrder,
+    getPaymentDetails,
+    getPaymentStats,
+    getUserPayments,
+    processPayment,
+    processRefund,
+    verifyPayment,
 } from '../controllers/paymentController.js';
-import { protect, authorize } from '../middleware/auth.js';
+import { authorize, protect } from '../middleware/auth.js';
 
 const router = express.Router();
 

@@ -1,6 +1,6 @@
 # 🏠 HomelyHub - Premium Home Rental Platform
 
-A full-stack MERN application for booking and managing property rentals, similar to Airbnb.
+A modern full-stack MERN application for property rentals with host dashboard and booking system.
 
 ![Tech Stack](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Express](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
@@ -10,26 +10,27 @@ A full-stack MERN application for booking and managing property rentals, similar
 ## ✨ Features
 
 ### For Guests
-- 🔍 Advanced property search with filters
-- 📅 Real-time booking system
+- 🔍 Advanced property search with filters (location, price, type, amenities)
+- 📅 Real-time booking system with calendar
 - ⭐ Review and rating system
 - 💬 Direct messaging with hosts
 - 💳 Secure payment integration
-- 📱 Responsive design for all devices
-- 🗺️ Interactive map view
-- ❤️ Wishlist functionality
-- 🤖 AI chat assistant
+- 📱 Fully responsive design
+- 🗺️ Interactive map view with property locations
+- ❤️ Wishlist/Favorites functionality
+- 🤖 AI chat assistant for help
 
-### For Hosts
-- 🏠 Property listing management
-- 📊 Dashboard with analytics
-- 📅 Booking calendar
-- 💰 Earnings tracking
-- 📸 Image upload and management
-- 📝 Property description editor
-- 🔔 Real-time notifications
+### For Hosts (Complete Dashboard)
+- 📊 **Dashboard Overview**: Stats cards, recent bookings, performance metrics
+- 🏠 **My Properties**: Manage all listings with search and filters
+- ➕ **Add Property**: Complete form with image upload and amenities
+- 📅 **Bookings**: Manage requests with accept/reject actions
+- 💰 **Earnings**: Track revenue and transaction history
+- ⚙️ **Profile Settings**: Account management
+- 🎨 **Vibrant Design**: Purple-pink gradient theme, high contrast
+- � **Easy Navigation**: Switch between guest and host modes
 
-### Authentication
+### Authentication & Security
 - 🔐 JWT-based authentication
 - 📧 Email verification
 - 🔑 Password reset functionality
@@ -41,313 +42,302 @@ A full-stack MERN application for booking and managing property rentals, similar
 ### Prerequisites
 
 - Node.js 16+ and npm
-- MongoDB Atlas account (or local MongoDB)
+- MongoDB Atlas account
 - Git
 
 ### Installation
 
 1. **Clone the repository**
 ```bash
-git clone <your-repo-url>
-cd homelyhub
+git clone https://github.com/Mudavath-kumar/Webstack-acadamy-Project.git
+cd Webstack-acadamy-Project
 ```
 
-2. **Install dependencies for both frontend and backend**
+2. **Install Backend Dependencies**
 ```bash
-# Install backend dependencies
 cd backend
 npm install
+```
 
-# Install frontend dependencies
+3. **Install Frontend Dependencies**
+```bash
 cd ../frontend
 npm install
 ```
 
-3. **Configure environment variables**
+4. **Configure Environment Variables**
 
 **Backend** (`backend/.env`):
-```bash
-cd backend
-cp .env.example .env
-```
-
-Edit `backend/.env` and update:
 ```env
+NODE_ENV=development
+PORT=5060
+
+# MongoDB Atlas Connection
 MONGODB_URI=your_mongodb_atlas_connection_string
+
+# JWT Secret (generate a random secure key)
 JWT_SECRET=your_super_secret_jwt_key
-FRONTEND_URL=http://localhost:3000
+
+# Frontend URL
+FRONTEND_URL=http://localhost:3001
+
+# Cloudinary (for image uploads - optional)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-**Frontend** (`frontend/.env`):
-```bash
-cd frontend
-cp .env.example .env
-```
-
-For local development, the default values work:
 ```env
-VITE_API_URL=/api/v1
+VITE_API_URL=http://localhost:5060/api
+VITE_FRONTEND_URL=http://localhost:3001
 ```
 
-4. **Run the application**
+### Running the Application
 
-**Option 1: Run Both Together (Development)**
-
-Terminal 1 - Backend:
+**Terminal 1 - Backend:**
 ```bash
 cd backend
-npm start
-# Backend runs on http://localhost:5000
-```
-
-Terminal 2 - Frontend:
-```bash
-cd frontend
 npm run dev
-# Frontend runs on http://localhost:3000
 ```
 
-**Option 2: Run Separately**
-
-Backend only:
-```bash
-cd backend
-npm start
-```
-
-Frontend only:
+**Terminal 2 - Frontend:**
 ```bash
 cd frontend
 npm run dev
 ```
 
-5. **Access the application**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000/api/v1
+**Access Points:**
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:5060
+- Health Check: http://localhost:5060/health
 
-## 📁 Project Structure
+## 🏗️ Project Structure
 
 ```
-homelyhub/
-├── frontend/              # React frontend application
+Webstack-acadamy-Project/
+├── frontend/                # React frontend (Vite)
 │   ├── src/
-│   │   ├── components/   # Reusable components
-│   │   ├── pages/        # Page components
-│   │   ├── store/        # Redux store
-│   │   ├── services/     # API services
-│   │   └── ...
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/          # Page components
+│   │   │   ├── guest/      # Guest pages
+│   │   │   └── host/       # Host Dashboard pages
+│   │   ├── context/        # React Context (Auth)
+│   │   ├── services/       # API services
+│   │   ├── styles/         # CSS files
+│   │   └── utils/          # Helper functions
+│   ├── public/             # Static assets
 │   ├── package.json
-│   └── README.md
+│   └── vite.config.js
 │
-├── backend/               # Express backend API
-│   ├── config/           # Configuration files
-│   ├── controllers/      # Route controllers
-│   ├── middleware/       # Custom middleware
-│   ├── models/           # Mongoose models
-│   ├── routes/           # API routes
-│   ├── utils/            # Utility functions
-│   ├── server.js         # Entry point
-│   ├── package.json
-│   └── README.md
+├── backend/                # Express backend
+│   ├── controllers/        # Business logic
+│   ├── models/            # MongoDB schemas
+│   ├── routes/            # API endpoints
+│   ├── middleware/        # Auth, error handling
+│   ├── config/            # Database, Cloudinary
+│   ├── utils/             # Email, templates
+│   └── server.js          # Entry point (Port 5060)
 │
-└── README.md             # This file
-
-Important: Use only the `backend/` folder for the API. The older `server/` folder is deprecated and will be removed. Do not run or edit anything under `server/`.
+├── .gitignore
+└── README.md
 ```
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **React 19** - UI library
-- **Vite** - Build tool
-- **Redux Toolkit** - State management
-- **React Router v7** - Routing
-- **Axios** - HTTP client
-- **Framer Motion** - Animations
-- **Lucide React** - Icons
-- **React Hot Toast** - Notifications
+**Frontend:**
+- React 18, Vite, React Router v6
+- Axios, Framer Motion, React Hot Toast
+- Leaflet (Maps), Lucide Icons, date-fns
 
-### Backend
-- **Node.js** - Runtime
-- **Express.js** - Web framework
-- **MongoDB** - Database
-- **Mongoose** - ODM
-- **JWT** - Authentication
-- **bcryptjs** - Password hashing
-- **Cloudinary** - Image storage
-- **Razorpay** - Payment gateway
-- **Nodemailer** - Email service
+**Backend:**
+- Node.js, Express.js
+- MongoDB with Mongoose
+- JWT Authentication, Bcrypt
+- Multer, Cloudinary, Nodemailer
 
-## 🌐 Deployment
+## 🚀 Deployment
 
-### Deploy Backend
+### Frontend Deployment (Vercel)
 
-#### Option 1: Render (Recommended)
-1. Create account on [Render](https://render.com)
-2. Create new Web Service
-3. Connect your GitHub repo
-4. Configure:
+1. **Push to GitHub**
+```bash
+git push origin main
+```
+
+2. **Deploy to Vercel**
+   - Visit [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - **Root Directory**: `frontend`
+   - **Framework**: Vite
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+
+3. **Environment Variables** (Vercel Dashboard):
+```
+VITE_API_URL=https://your-backend-url.com/api
+VITE_FRONTEND_URL=https://your-app.vercel.app
+```
+
+### Backend Deployment (Railway/Render)
+
+1. **Railway Deployment**
+   - Visit [railway.app](https://railway.app)
+   - Create new project from GitHub
    - **Root Directory**: `backend`
    - **Build Command**: `npm install`
    - **Start Command**: `npm start`
-5. Add environment variables
-6. Deploy!
 
-#### Option 2: Railway
-1. Create account on [Railway](https://railway.app)
-2. New Project → Deploy from GitHub
-3. Set root directory to `backend`
-4. Add environment variables
-5. Deploy!
-
-#### Option 3: Heroku
-```bash
-heroku create your-backend-name
-heroku config:set MONGODB_URI=your_uri
-heroku config:set JWT_SECRET=your_secret
-# Add other env vars
-git subtree push --prefix backend heroku main
+2. **Environment Variables**:
+```
+NODE_ENV=production
+PORT=5060
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+JWT_SECRET=your_super_secret_jwt_key
+FRONTEND_URL=https://your-app.vercel.app
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-### Deploy Frontend
+### MongoDB Atlas Setup
 
-#### Option 1: Vercel (Recommended)
-1. Install Vercel CLI: `npm i -g vercel`
-2. Navigate to frontend: `cd frontend`
-3. Run: `vercel`
-4. Set environment variable:
-   - `VITE_API_URL=https://your-backend.com/api/v1`
-5. Deploy: `vercel --prod`
+1. Create cluster at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
+2. Create database user with read/write permissions
+3. Network Access: Add IP (0.0.0.0/0 for all) or specific IPs
+4. Get connection string: Replace `<password>` and `<dbname>`
 
-#### Option 2: Netlify
+## 🐛 Troubleshooting
+
+### MongoDB Connection Error
+✅ **Solution**: 
+- Verify `MONGODB_URI` format: `mongodb+srv://username:password@cluster.mongodb.net/database`
+- Whitelist all IPs (0.0.0.0/0) in MongoDB Atlas Network Access
+- Check database user has correct permissions
+
+### CORS Errors
+✅ **Solution**:
+- Update `FRONTEND_URL` in backend `.env` to match exact frontend domain
+- Check `backend/server.js` CORS configuration includes your domain
+
+### Failed to Load Transactions/Earnings
+✅ **Status**: Mock endpoints return empty data (expected behavior)
+- Backend endpoints return `{ earnings: 0, transactions: [] }`
+- Implement actual logic when payment system is connected
+
+### Image Upload Fails
+✅ **Solution**:
+- Add Cloudinary credentials to `.env`
+- Check file size limits (default: 5MB)
+- Verify Cloudinary API key is active
+
+### Port Already in Use
+✅ **Solution**:
 ```bash
-cd frontend
-npm run build
-netlify deploy --prod --dir=dist
+# Windows
+netstat -ano | findstr :5060
+taskkill /PID <PID> /F
+
+# Change port in backend/.env
+PORT=5061
 ```
 
-Set environment variable in Netlify dashboard:
-- `VITE_API_URL=https://your-backend.com/api/v1`
+## 📚 API Endpoints
 
-#### Option 3: GitHub Pages
-Not recommended for this app (requires backend proxy)
+### Authentication (`/api/auth`)
+- `POST /register` - Create account
+- `POST /login` - Sign in
+- `POST /logout` - Sign out
+- `GET /me` - Get current user
+- `POST /forgot-password` - Request reset
+- `POST /reset-password` - Reset password
 
-### Important Deployment Notes
+### Properties (`/api/properties`)
+- `GET /` - List all properties
+- `GET /:id` - Get property details
+- `POST /` - Create property (Host)
+- `PUT /:id` - Update property (Host)
+- `DELETE /:id` - Delete property (Host)
+- `GET /host/my-properties` - Host's properties
 
-1. **Update CORS**: In `backend/.env`, update `FRONTEND_URL` to your deployed frontend URL
-2. **Update API URL**: In `frontend/.env`, update `VITE_API_URL` to your deployed backend URL
-3. **Database**: Use MongoDB Atlas for production (never local MongoDB)
-4. **Security**: 
-   - Change `JWT_SECRET` to a strong random string
-   - Never commit `.env` files
-   - Use environment variables for all secrets
+### Bookings (`/api/bookings`)
+- `GET /` - User's bookings
+- `GET /host/my-bookings` - Host's bookings
+- `POST /` - Create booking
+- `PATCH /:id/status` - Update status (Host)
 
-## 🔧 Configuration
+### Payments (`/api/payments`)
+- `GET /host/earnings` - Host earnings stats
+- `GET /host/transactions` - Transaction history
 
-### Backend Environment Variables
+### Reviews (`/api/reviews`)
+- `GET /property/:propertyId` - Property reviews
+- `POST /` - Create review
+- `PUT /:id` - Update review
+- `DELETE /:id` - Delete review
 
-See `backend/.env.example` for all available options.
+## 🔑 Key Features
 
-Required:
-- `MONGODB_URI` - MongoDB connection string
-- `JWT_SECRET` - Secret key for JWT
-- `FRONTEND_URL` - Frontend URL for CORS
+### Host Dashboard (Complete)
+- **Location**: `frontend/src/pages/host/`
+- **Pages**: DashboardOverview, MyProperties, PropertyForm, HostBookings, Earnings
+- **Styling**: `frontend/src/styles/HostDashboard.css` (vibrant purple-pink gradient theme)
+- **API Integration**: All pages connected with graceful error handling
 
-Optional:
-- `CLOUDINARY_*` - For image uploads
-- `RAZORPAY_*` - For payment processing (legacy). Local development now supports a built‑in mock payment flow.
-- `SMTP_*` - For email functionality
+### Authentication Flow
+- JWT tokens stored in localStorage
+- Auto-redirect on token expiry
+- Role-based UI rendering (Guest/Host/Admin)
+- Protected routes with middleware
 
-### Roles
-- Default signup role: `guest`
-- To sign up as Host from the "Become a Host" flow, send `{ role: "host" }` or `{ signUpAsHost: true }` to `/api/v1/auth/register`.
+### Image Uploads
+- Cloudinary integration for storage
+- Multiple image support per property
+- Image optimization and CDN delivery
+- Fallback to placeholder if upload fails
 
-### Mock payments
-- Endpoint: `POST /api/v1/bookings/mock-checkout`
-- Body: `{ property, checkIn, checkOut, guests: { adults, children? } }`
-- Behavior: Computes price, marks booking as paid and confirmed, and creates a mock Payment record in MongoDB.
+## 📊 Database Schema
 
-### Frontend Environment Variables
-
-See `frontend/.env.example` for all available options.
-
-Required:
-- `VITE_API_URL` - Backend API URL
-
-Optional:
-- `VITE_MAPBOX_TOKEN` - For map functionality
-- `VITE_GOOGLE_MAPS_API_KEY` - For Google Maps
-
-## 📚 API Documentation
-
-See `backend/README.md` for complete API documentation.
-
-### Quick Reference
-
-- Base URL: `http://localhost:5000/api/v1`
-- Authentication: JWT Bearer token in Authorization header
-- All endpoints return JSON
-
-Main endpoints:
-- `/auth/*` - Authentication
-- `/properties/*` - Property management
-- `/bookings/*` - Booking management
-- `/reviews/*` - Review system
-- `/messages/*` - Messaging
-- `/users/*` - User management
-
-## 🧪 Testing
-
-### Test Backend
-```bash
-cd backend
-npm start
-
-# In another terminal
-curl http://localhost:5000/api/v1/health
-```
-
-### Test Frontend
-```bash
-cd frontend
-npm run dev
-# Open http://localhost:3000 in browser
-```
+**User**: name, email, password, role, avatar, phone, verified  
+**Property**: title, description, host, price, location, amenities, images, availability  
+**Booking**: property, guest, host, checkIn, checkOut, status, totalPrice  
+**Review**: property, user, rating, comment, createdAt  
+**Payment**: booking, amount, status, method, transactionId
 
 ## 🤝 Contributing
 
+Contributions are welcome! Please follow these steps:
+
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit your changes: `git commit -am 'Add feature'`
-4. Push to the branch: `git push origin feature-name`
-5. Open a Pull Request
+2. Create feature branch: `git checkout -b feature/YourFeature`
+3. Commit changes: `git commit -m 'Add YourFeature'`
+4. Push to branch: `git push origin feature/YourFeature`
+5. Submit pull request
 
-## 📝 License
+## 📄 License
 
-This project is licensed under the MIT License.
+MIT License - feel free to use this project for personal or commercial purposes.
+
+## 👨‍💻 Author
+
+**Kumar Mudavath**  
+GitHub: [@Mudavath-kumar](https://github.com/Mudavath-kumar)  
+Repository: [Webstack-acadamy-Project](https://github.com/Mudavath-kumar/Webstack-acadamy-Project)
 
 ## 🙏 Acknowledgments
 
-- Design inspired by Airbnb
-- Icons from Lucide React
-- Maps from Mapbox/Google Maps
-
-## 📞 Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Check the documentation in `frontend/README.md` and `backend/README.md`
-
-## 🗺️ Roadmap
-
-- [ ] Real-time notifications with Socket.io
-- [ ] Multi-language support
-- [ ] Advanced search filters
-- [ ] Calendar integration
-- [ ] Mobile app (React Native)
-- [ ] Admin dashboard
-- [ ] Analytics and reporting
+- React & Vite for excellent developer experience
+- MongoDB Atlas for reliable database hosting
+- Vercel for seamless frontend deployment
+- Cloudinary for image management
+- All open-source contributors
 
 ---
 
-**Made with ❤️ by HomelyHub Team**
+### 📞 Support
+
+If you encounter issues or have questions:
+1. Check the Troubleshooting section above
+2. Review closed issues on GitHub
+3. Open a new issue with detailed description
+
+**⭐ Star this repo if you find it helpful!**
