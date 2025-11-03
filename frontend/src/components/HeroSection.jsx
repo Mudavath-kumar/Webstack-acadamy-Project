@@ -1,6 +1,6 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import SimpleSearchBar from './SimpleSearchBar';
+import TypingAnimation from './TypingAnimation';
 
 const HeroSection = () => {
   return (
@@ -15,11 +15,16 @@ const HeroSection = () => {
         paddingTop: '80px',
       }}
     >
-      {/* Background Image with Parallax Effect */}
+      {/* Animated Background with Gradient Movement */}
       <motion.div
-        initial={{ scale: 1.2, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 1.5 }}
+        animate={{
+          backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: 'linear',
+        }}
         style={{
           position: 'absolute',
           top: 0,
@@ -33,15 +38,26 @@ const HeroSection = () => {
         }}
       />
 
-      {/* Gradient Overlay */}
-      <div
+      {/* Animated Gradient Overlay */}
+      <motion.div
+        animate={{
+          background: [
+            'linear-gradient(135deg, rgba(255, 107, 157, 0.3) 0%, rgba(120, 55, 229, 0.3) 100%)',
+            'linear-gradient(135deg, rgba(120, 55, 229, 0.3) 0%, rgba(102, 126, 234, 0.3) 100%)',
+            'linear-gradient(135deg, rgba(255, 107, 157, 0.3) 0%, rgba(120, 55, 229, 0.3) 100%)',
+          ],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: 'linear',
+        }}
         style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'linear-gradient(135deg, rgba(255, 107, 157, 0.3) 0%, rgba(120, 55, 229, 0.3) 100%)',
         }}
       />
 
@@ -120,7 +136,15 @@ const HeroSection = () => {
                 backgroundClip: 'text',
               }}
             >
-              anywhere in the world
+              <TypingAnimation 
+                texts={[
+                  'anywhere in the world',
+                  'anytime you want',
+                  'your way, your choice',
+                ]}
+                speed={100}
+                delay={2000}
+              />
             </span>
             <motion.span
               animate={{

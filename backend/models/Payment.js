@@ -132,7 +132,8 @@ paymentSchema.pre('save', function (next) {
 paymentSchema.index({ booking: 1 });
 paymentSchema.index({ user: 1 });
 paymentSchema.index({ status: 1 });
-paymentSchema.index({ transactionId: 1 });
+// Note: Do NOT duplicate the unique index on transactionId defined on the field above
+// to avoid Mongoose duplicate index warnings.
 paymentSchema.index({ createdAt: -1 });
 
 // Virtual for payment age

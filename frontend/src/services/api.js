@@ -27,10 +27,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Don't redirect on 401 for public routes (properties, etc.)
+    const isPublicRoute = error.config?.url?.includes('/properties') && 
+                         error.config?.method === 'get';
+    
+    if (error.response?.status === 401 && !isPublicRoute) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/';
+      // Only redirect if it's a protected route
+      if (error.config?.url?.includes('/auth/me') || 
+          error.config?.url?.includes('/bookings') ||
+          error.config?.url?.includes('/profile')) {
+        window.location.href = '/';
+      }
     }
     return Promise.reject(error);
   }
@@ -61,6 +70,7 @@ export const propertyAPI = {
 export const bookingAPI = {
   create: (data) => api.post('/bookings', data),
   createBooking: (data) => api.post('/bookings', data),
+  mockCheckout: (data) => api.post('/bookings/mock-checkout', data),
   getOne: (id) => api.get(`/bookings/${id}`),
   cancel: (id, data) => api.put(`/bookings/${id}/cancel`, data),
   cancelBooking: (id, data) => api.put(`/bookings/${id}/cancel`, data),

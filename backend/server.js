@@ -1,15 +1,15 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import connectDB from './config/database.js';
 import errorHandler from './middleware/errorHandler.js';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables (ensure .env overrides any existing process env)
+dotenv.config({ override: true });
 
 // Connect to MongoDB
 connectDB();
@@ -45,14 +45,14 @@ if (process.env.NODE_ENV === 'development') {
 
 // Import routes
 import authRoutes from './routes/auth.js';
-import userRoutes from './routes/users.js';
-import propertyRoutes from './routes/properties.js';
 import bookingRoutes from './routes/bookings.js';
-import reviewRoutes from './routes/reviews.js';
-import paymentRoutes from './routes/payments.js';
-import messageRoutes from './routes/messages.js';
 import favoriteRoutes from './routes/favorites.js';
+import messageRoutes from './routes/messages.js';
 import otpRoutes from './routes/otp.js';
+import paymentRoutes from './routes/payments.js';
+import propertyRoutes from './routes/properties.js';
+import reviewRoutes from './routes/reviews.js';
+import userRoutes from './routes/users.js';
 
 // Mount routes
 app.use('/api/v1/auth', authRoutes);
@@ -96,7 +96,8 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
+// Align with Vite proxy (frontend/vite.config.js) which targets 5060 by default
+const PORT = process.env.PORT || 5060;
 
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

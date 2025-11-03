@@ -1,22 +1,39 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { 
-  MapPin, Star, Users, Home, Wifi, Car, Waves, ChevronLeft, ChevronRight, 
-  Shield, Calendar, Heart, Share2, Facebook, Twitter, Link as LinkIcon,
-  MessageCircle, Mail
-} from 'lucide-react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
-import toast from 'react-hot-toast';
 import axios from 'axios';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    Car,
+    ChevronLeft, ChevronRight,
+    Facebook,
+    Heart,
+    Info,
+    Link as LinkIcon,
+    Loader,
+    Mail,
+    MapPin,
+    MessageCircle,
+    Share2,
+    Shield,
+    Star,
+    Twitter,
+    Waves,
+    Wifi
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
 import HostCard from '../components/HostCard';
-import ReviewCard from '../components/ReviewCard';
 import ListingCard from '../components/ListingCard';
 import MotionWrapper from '../components/MotionWrapper';
+import ReviewCard from '../components/ReviewCard';
+import ScrollToTop from '../components/ScrollToTop';
+import { propertyAPI } from '../services/api';
+import '../styles/ListingDetailEnhanced.css';
 
 const ListingDetailEnhanced = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -25,108 +42,197 @@ const ListingDetailEnhanced = () => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
   const [shareCount, setShareCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [property, setProperty] = useState(null);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [autoSlide, setAutoSlide] = useState(true);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [showShareTooltip, setShowShareTooltip] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  
+  const similarScrollRef = useRef(null);
 
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const isHost = user && user.role === 'host';
 
-  // Mock listing data - in production, fetch from API
-  const listing = {
-    id,
-    title: 'Luxury Beachfront Villa',
-    location: 'Malibu, California',
-    price: 45000,
-    rating: 4.95,
-    reviews: 128,
-    guests: 8,
-    bedrooms: 4,
-    beds: 5,
-    bathrooms: 3,
-    coordinates: {
-      lat: 34.0259,
-      lng: -118.7798
-    },
-    images: [
-      'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80',
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80',
-      'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1200&q=80',
-    ],
-    description: 'Experience luxury coastal living in this stunning beachfront villa. Wake up to breathtaking ocean views, enjoy your morning coffee on the expansive deck, and spend your days lounging by the infinity pool or strolling along the private beach. This meticulously designed property combines modern elegance with comfortable living spaces, perfect for families or groups seeking an unforgettable getaway.',
-    amenities: [
-      { icon: Wifi, name: 'WiFi' },
-      { icon: Car, name: 'Free parking' },
-      { icon: Waves, name: 'Private pool' },
-      { icon: Shield, name: '24/7 Security' },
-    ],
-  };
+  const isValidObjectId = (val) => /^[a-f\d]{24}$/i.test(String(val || ''));
 
-  const host = {
-    name: 'Sarah Johnson',
-    avatar: 'https://i.pravatar.cc/150?img=1',
+  // Helper functions (use function declarations so they're available before use)
+  function getAmenityIcon(amenity) {
+    const iconMap = {
+      wifi: Wifi,
+      parking: Car,
+      pool: Waves,
+      'air-conditioning': Shield,
+      kitchen: Wifi,
+      gym: Shield,
+    };
+    return iconMap[amenity] || Wifi;
+  }
+
+  function formatAmenityName(amenity) {
+    return amenity
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  // Fetch property data from API
+  useEffect(() => {
+    const fetchProperty = async () => {
+      setLoading(true);
+      try {
+        const { data } = await propertyAPI.getOne(id);
+        const prop = data?.data || data;
+        
+        if (!prop) {
+          throw new Error('Property not found');
+        }
+        
+        setProperty(prop);
+        setGuests(1); // Default guests
+        setFavoriteCount(prop.favoriteCount || 0);
+        setShareCount(prop.shareCount || 0);
+      } catch (error) {
+        console.error('Error fetching property:', error);
+        toast.error('Property not found. Please pick a real property from Explore.');
+        navigate('/explore');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProperty();
+    }
+  }, [id, navigate]);
+
+  // Normalize property data for display
+  const listing = property ? {
+    _id: property._id,
+    id: property._id,
+    title: property.title,
+    location: `${property.location.city}, ${property.location.country}`,
+    price: property.pricing?.basePrice || 0,
+    rating: property.rating?.average || 0,
+    reviews: property.rating?.count || 0,
+    guests: property.capacity?.guests || 1,
+    bedrooms: property.capacity?.bedrooms || 0,
+    beds: property.capacity?.beds || 0,
+    bathrooms: property.capacity?.bathrooms || 0,
+    coordinates: property.location?.coordinates
+      ? {
+          lat: property.location.coordinates.latitude ?? property.location.coordinates.lat ?? 0,
+          lng: property.location.coordinates.longitude ?? property.location.coordinates.lng ?? 0,
+        }
+      : { lat: 0, lng: 0 },
+    images: property.images?.map(img => img.url || img) || [],
+    description: property.description || '',
+    amenities: property.amenities?.slice(0, 8).map(am => ({
+      icon: getAmenityIcon(am),
+      name: formatAmenityName(am),
+    })) || [],
+    cleaningFee: property.pricing?.cleaningFee || 0,
+    serviceFee: property.pricing?.serviceFee || 0,
+  } : null;
+
+  const host = property?.owner ? {
+    name: property.owner.name || 'Host',
+    avatar: property.owner.avatar || 'https://i.pravatar.cc/150?img=1',
     verified: true,
-    joinDate: 'Joined in 2019',
-    rating: 4.98,
-    reviews: 234,
-    properties: 12,
-    responseRate: 98,
+    joinDate: property.owner.createdAt ? `Joined in ${new Date(property.owner.createdAt).getFullYear()}` : 'Member',
+    rating: 4.8,
+    reviews: 0,
+    properties: 1,
+    responseRate: 95,
     responseTime: '< 1hr',
-    bio: 'Passionate about hospitality and creating memorable experiences for my guests. I love sharing my beautiful properties with travelers from around the world.',
-  };
+    bio: property.owner.bio || 'Passionate about hospitality and creating memorable experiences for guests.',
+  } : null;
 
-  const reviews = [
-    {
-      name: 'Michael Chen',
-      avatar: 'https://i.pravatar.cc/150?img=12',
-      location: 'San Francisco, CA',
-      date: 'March 2024',
-      rating: 5,
-      text: 'Absolutely stunning property! The views were incredible and the house had everything we needed. Sarah was a wonderful host and very responsive. Highly recommend!',
-    },
-    {
-      name: 'Emma Williams',
-      avatar: 'https://i.pravatar.cc/150?img=5',
-      location: 'London, UK',
-      date: 'February 2024',
-      rating: 5,
-      text: 'This place exceeded all our expectations. The infinity pool and beach access made our vacation perfect. Would definitely stay here again!',
-    },
-  ];
+  // Scroll detection for sticky navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const similarListings = [
-    {
-      id: 10,
-      title: 'Modern Beach House',
-      location: 'Santa Monica, CA',
-      image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80',
-      price: 38000,
-      rating: 4.88,
-      guests: 6,
-      bedrooms: 3,
-      beds: 4,
-    },
-    {
-      id: 11,
-      title: 'Coastal Retreat',
-      location: 'Laguna Beach, CA',
-      image: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800&q=80',
-      price: 42500,
-      rating: 4.92,
-      guests: 7,
-      bedrooms: 4,
-      beds: 5,
-    },
-  ];
+  // Auto-slide image gallery
+  useEffect(() => {
+    if (!autoSlide || !listing?.images?.length) return;
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % listing.images.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [autoSlide, listing?.images?.length]);
+
+  // Map loading simulation
+  useEffect(() => {
+    const timer = setTimeout(() => setMapLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div style={{ paddingTop: '100px', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <Loader size={48} className="spin" style={{ margin: '0 auto var(--spacing-lg)', color: 'var(--primary)' }} />
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Loading property...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if property not found
+  if (!property || !listing) {
+    return (
+      <div style={{ paddingTop: '100px', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: '1.5rem', marginBottom: 'var(--spacing-md)' }}>Property not found</p>
+          <button onClick={() => navigate('/explore')} className="btn-gradient">
+            Browse Properties
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const reviews = [];
+
+  const similarListings = [];
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % listing.images.length);
+    if (listing.images && listing.images.length > 0) {
+      setCurrentImageIndex((prev) => (prev + 1) % listing.images.length);
+    }
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + listing.images.length) % listing.images.length);
+    if (listing.images && listing.images.length > 0) {
+      setCurrentImageIndex((prev) => (prev - 1 + listing.images.length) % listing.images.length);
+    }
   };
 
   const handleBooking = (e) => {
     e.preventDefault();
+    
+    // Validate dates and guests
+    if (!checkIn || !checkOut) {
+      toast.error('Please select check-in and check-out dates');
+      return;
+    }
+    
+    if (!guests || guests < 1) {
+      toast.error('Please select number of guests');
+      return;
+    }
+    
+    if (new Date(checkIn) >= new Date(checkOut)) {
+      toast.error('Check-out date must be after check-in date');
+      return;
+    }
     
     // Prevent hosts from booking
     if (isHost) {
@@ -134,7 +240,15 @@ const ListingDetailEnhanced = () => {
       return;
     }
     
-    window.location.href = `/checkout?listingId=${id}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`;
+    // Prevent booking for demo listings or invalid IDs
+    if (listing._id === 'demo-property' || !isValidObjectId(listing._id)) {
+      toast.error('This is a demo preview. Please choose a real listing from Explore to book.');
+      navigate('/explore');
+      return;
+    }
+
+    // Use real property ID for booking
+    navigate(`/checkout?listingId=${listing._id}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`);
   };
 
   const handleFavoriteToggle = async () => {
@@ -143,11 +257,18 @@ const ListingDetailEnhanced = () => {
       return;
     }
 
+    // Skip favorites for demo listings
+    if (property?._id === 'demo-property' || !isValidObjectId(id)) {
+      toast('Favorites are available for real listings only.', { icon: '🔖' });
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
+      const base = import.meta.env.VITE_API_URL || '/api/v1';
       if (isFavorited) {
         await axios.delete(
-          `${import.meta.env.VITE_API_URL}/favorites/${id}`,
+          `${base}/favorites/${id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsFavorited(false);
@@ -155,7 +276,7 @@ const ListingDetailEnhanced = () => {
         toast.success('Removed from favorites');
       } else {
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/favorites/${id}`,
+          `${base}/favorites/${id}`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -174,9 +295,15 @@ const ListingDetailEnhanced = () => {
     const text = `Check out this amazing property: ${title}`;
 
     try {
-      // Track share
-      await axios.post(`${import.meta.env.VITE_API_URL}/properties/${id}/share`);
-      setShareCount(prev => prev + 1);
+      const base = import.meta.env.VITE_API_URL || '/api/v1';
+      // For demo listings, do not call backend share endpoint
+      if (property?._id === 'demo-property' || !isValidObjectId(id)) {
+        // Just copy link or open platform share
+      } else {
+        // Track share for real properties
+        await axios.post(`${base}/properties/${id}/share`);
+        setShareCount(prev => prev + 1);
+      }
 
       switch (platform) {
         case 'facebook':
@@ -377,87 +504,69 @@ const ListingDetailEnhanced = () => {
         {/* Image Gallery */}
         <MotionWrapper>
           <div style={{ position: 'relative', marginBottom: 'var(--spacing-xl)' }}>
-            <div
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: '500px',
-                borderRadius: 'var(--radius-xl)',
-                overflow: 'hidden',
-              }}
-            >
-              <img
-                src={listing.images[currentImageIndex]}
-                alt={listing.title}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
+            <div className="image-gallery-container">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentImageIndex}
+                  src={listing.images[currentImageIndex]}
+                  alt={listing.title}
+                  className="gallery-image"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              </AnimatePresence>
               
+              {/* Navigation Buttons */}
               <button
                 onClick={prevImage}
-                style={{
-                  position: 'absolute',
-                  left: '20px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'rgba(255, 255, 255, 0.9)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                className="gallery-controls gallery-control-btn"
+                style={{ left: '20px' }}
               >
                 <ChevronLeft size={24} />
               </button>
               
               <button
                 onClick={nextImage}
-                style={{
-                  position: 'absolute',
-                  right: '20px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'rgba(255, 255, 255, 0.9)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                className="gallery-controls gallery-control-btn"
+                style={{ right: '20px' }}
               >
                 <ChevronRight size={24} />
               </button>
 
-              <div
+              {/* Auto-slide toggle */}
+              <button
+                onClick={() => setAutoSlide(!autoSlide)}
                 style={{
                   position: 'absolute',
-                  bottom: '20px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  display: 'flex',
-                  gap: '8px',
+                  top: '20px',
+                  right: '20px',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '50px',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  zIndex: 10,
                 }}
               >
+                {autoSlide ? 'Pause' : 'Play'} Slideshow
+              </button>
+
+              {/* Dots Navigation */}
+              <div className="gallery-dots">
                 {listing.images.map((_, index) => (
                   <div
                     key={index}
-                    style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: index === currentImageIndex ? 'white' : 'rgba(255, 255, 255, 0.5)',
-                      cursor: 'pointer',
-                    }}
+                    className={`gallery-dot ${index === currentImageIndex ? 'active' : ''}`}
                     onClick={() => setCurrentImageIndex(index)}
                   />
                 ))}
@@ -472,25 +581,50 @@ const ListingDetailEnhanced = () => {
             {/* Header */}
             <MotionWrapper>
               <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-                <h1
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
-                    fontWeight: '700',
-                    marginBottom: 'var(--spacing-sm)',
-                  }}
-                >
+                <h1 className="property-title">
                   {listing.title}
                 </h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Star size={16} fill="#FFD700" color="#FFD700" />
-                    <span style={{ fontWeight: '600' }}>{listing.rating}</span>
+                {listing._id === 'demo-property' && (
+                  <div style={{
+                    marginTop: '0.25rem',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '8px',
+                    background: 'var(--bg-secondary)',
+                    border: '1px dashed var(--border-color)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <Info size={16} />
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Demo preview — open Explore to view real, bookable listings from the database.
+                    </span>
+                  </div>
+                )}
+                <div className="property-meta">
+                  {/* Star Rating Display */}
+                  <div className="rating-display">
+                    {[...Array(5)].map((_, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: index * 0.1, type: 'spring', stiffness: 200 }}
+                      >
+                        <Star 
+                          size={18} 
+                          fill={index < Math.floor(listing.rating) ? '#FFD700' : 'none'} 
+                          color="#FFD700" 
+                        />
+                      </motion.div>
+                    ))}
+                    <span style={{ fontWeight: '600', marginLeft: '0.25rem' }}>{listing.rating}</span>
                     <span style={{ color: 'var(--text-secondary)' }}>({listing.reviews} reviews)</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)' }}>
-                    <MapPin size={16} />
-                    <span>{listing.location}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                    <MapPin size={18} />
+                    <span style={{ fontWeight: '500' }}>{listing.location}</span>
                   </div>
                 </div>
               </div>
@@ -539,9 +673,19 @@ const ListingDetailEnhanced = () => {
                 >
                   About this place
                 </h2>
-                <p style={{ lineHeight: '1.8', color: 'var(--text-secondary)' }}>
-                  {listing.description}
-                </p>
+                <div className={`description-text ${!showFullDescription ? 'collapsed' : ''}`}>
+                  <p style={{ lineHeight: '1.8', color: 'var(--text-secondary)' }}>
+                    {listing.description}
+                  </p>
+                </div>
+                {listing.description.length > 300 && (
+                  <button
+                    className="show-more-btn"
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                  >
+                    {showFullDescription ? 'Show less' : 'Show more'}
+                  </button>
+                )}
               </div>
             </MotionWrapper>
 
@@ -558,28 +702,21 @@ const ListingDetailEnhanced = () => {
                 >
                   What this place offers
                 </h2>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: 'var(--spacing-md)',
-                  }}
-                >
+                <div className="amenities-grid">
                   {listing.amenities.map((amenity, index) => (
-                    <div
+                    <motion.div
                       key={index}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--spacing-sm)',
-                        padding: 'var(--spacing-md)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: 'var(--radius-md)',
-                      }}
+                      className="amenity-item"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ scale: 1.05 }}
                     >
-                      <amenity.icon size={20} color="var(--primary)" />
-                      <span>{amenity.name}</span>
-                    </div>
+                      <div className="amenity-icon">
+                        <amenity.icon size={20} />
+                      </div>
+                      <span style={{ fontWeight: '500' }}>{amenity.name}</span>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -598,21 +735,28 @@ const ListingDetailEnhanced = () => {
                 >
                   Where you'll be
                 </h2>
-                <div style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-                  <LoadScript googleMapsApiKey="YOUR_GOOGLE_MAPS_API_KEY">
+                <div className="map-container">
+                  {mapLoading && <div className="map-loading" />}
+                  <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}>
                     <GoogleMap
                       mapContainerStyle={mapContainerStyle}
                       center={listing.coordinates}
                       zoom={13}
+                      onLoad={() => setMapLoading(false)}
                     >
                       <Marker position={listing.coordinates} />
                     </GoogleMap>
                   </LoadScript>
                 </div>
-                <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--text-secondary)' }}>
-                  <MapPin size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-                  {listing.location}
-                </p>
+                <motion.p
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 }}
+                  style={{ marginTop: 'var(--spacing-md)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <MapPin size={18} />
+                  <span style={{ fontWeight: '500' }}>{listing.location}</span>
+                </motion.p>
               </div>
             </MotionWrapper>
 
@@ -655,17 +799,12 @@ const ListingDetailEnhanced = () => {
             </MotionWrapper>
           </div>
 
-          {/* Booking Panel */}
+            {/* Booking Panel */}
           <div>
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              className="card"
-              style={{
-                position: 'sticky',
-                top: '100px',
-                padding: 'var(--spacing-xl)',
-              }}
+              className="card booking-sidebar"
             >
               {isHost ? (
                 /* Host View - Cannot Book */
@@ -689,12 +828,12 @@ const ListingDetailEnhanced = () => {
                   </a>
                 </div>
               ) : (
-                /* Guest View - Can Book */
+                /* Guest View - Can Book (real listings only) */
                 <>
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: 'var(--spacing-sm)' }}>
-                  <span style={{ fontSize: '2rem', fontWeight: '700' }}>₹{listing.price.toLocaleString()}</span>
-                  <span style={{ color: 'var(--text-secondary)' }}>/ night</span>
+                  <span className="price-display">₹{listing.price.toLocaleString()}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>/ night</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                   <Star size={14} fill="#FFD700" color="#FFD700" />
@@ -712,14 +851,8 @@ const ListingDetailEnhanced = () => {
                     type="date"
                     value={checkIn}
                     onChange={(e) => setCheckIn(e.target.value)}
-                    className="input"
+                    className="booking-input"
                     required
-                    style={{
-                      width: '100%',
-                      padding: 'var(--spacing-md)',
-                      borderRadius: 'var(--radius-lg)',
-                      border: '1px solid var(--border-color)',
-                    }}
                   />
                 </div>
 
@@ -731,14 +864,8 @@ const ListingDetailEnhanced = () => {
                     type="date"
                     value={checkOut}
                     onChange={(e) => setCheckOut(e.target.value)}
-                    className="input"
+                    className="booking-input"
                     required
-                    style={{
-                      width: '100%',
-                      padding: 'var(--spacing-md)',
-                      borderRadius: 'var(--radius-lg)',
-                      border: '1px solid var(--border-color)',
-                    }}
                   />
                 </div>
 
@@ -752,31 +879,36 @@ const ListingDetailEnhanced = () => {
                     max={listing.guests}
                     value={guests}
                     onChange={(e) => setGuests(e.target.value)}
-                    className="input"
+                    className="booking-input"
                     required
-                    style={{
-                      width: '100%',
-                      padding: 'var(--spacing-md)',
-                      borderRadius: 'var(--radius-lg)',
-                      border: '1px solid var(--border-color)',
-                    }}
                   />
                 </div>
 
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="btn-gradient"
-                  style={{ width: '100%', padding: 'var(--spacing-md)' }}
-                >
-                  Reserve
-                </motion.button>
+                {listing._id === 'demo-property' ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/explore')}
+                    className="btn-gradient"
+                    style={{ width: '100%', padding: 'var(--spacing-md)' }}
+                  >
+                    Browse real listings
+                  </button>
+                ) : (
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="reserve-button"
+                  >
+                    Reserve
+                  </motion.button>
+                )}
               </form>
 
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: 'var(--spacing-md)' }}>
-                You won't be charged yet
-              </p>
+              <div className="info-note">
+                <Info size={16} />
+                <span>{listing._id === 'demo-property' ? 'Demo listing — booking is disabled' : "You won't be charged yet"}</span>
+              </div>
               </>
               )}
             </motion.div>
@@ -804,6 +936,9 @@ const ListingDetailEnhanced = () => {
           </div>
         </MotionWrapper>
       </div>
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
 
       <style>{`
         @media (max-width: 968px) {

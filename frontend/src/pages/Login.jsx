@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Home, ArrowRight, Sparkles } from 'lucide-react';
-import { login, reset } from '../store/slices/authSlice';
+import { ArrowRight, Eye, EyeOff, Home, Lock, Mail, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { login, reset } from '../store/slices/authSlice';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -31,18 +31,18 @@ const Login = () => {
       dispatch(reset());
       
       // Redirect based on user role and intended destination
-      if (from !== '/' && from !== '/login') {
+      if (from && from !== '/' && from !== '/login') {
         // If user was trying to access a protected page, go there
         navigate(from, { replace: true });
       } else if (user.role === 'host') {
         toast.success('Redirecting to your Host Dashboard...', { duration: 2500 });
         setTimeout(() => {
-          navigate('/host-dashboard', { replace: true });
+          navigate('/host/dashboard', { replace: true });
         }, 1000);
       } else {
         toast.success('Explore amazing properties...', { duration: 2500 });
         setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate('/guest/home', { replace: true });
         }, 1000);
       }
     }

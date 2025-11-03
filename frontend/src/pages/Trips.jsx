@@ -1,46 +1,60 @@
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import MotionWrapper from '../components/MotionWrapper';
+import { bookingAPI } from '../services/api';
 
 const Trips = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const upcomingTrips = [
-    {
-      id: 1,
-      title: 'Luxury Beachfront Villa',
-      location: 'Malibu, California',
-      image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&q=80',
-      checkIn: '2024-04-01',
-      checkOut: '2024-04-05',
-      guests: 4,
-      status: 'Confirmed',
-    },
-    {
-      id: 2,
-      title: 'Mountain Retreat Cabin',
-      location: 'Aspen, Colorado',
-      image: 'https://images.unsplash.com/photo-1542718610-a1d656d1884c?w=600&q=80',
-      checkIn: '2024-05-15',
-      checkOut: '2024-05-20',
-      guests: 2,
-      status: 'Confirmed',
-    },
-  ];
+  useEffect(() => {
+    const loadBookings = async () => {
+      setLoading(true);
+      try {
+        const res = await bookingAPI.getUserBookings();
+        if (res.data?.success) {
+          setBookings(res.data.data || []);
+        } else {
+          setBookings([]);
+        }
+      } catch (err) {
+        console.error('Failed to load bookings', err);
+        toast.error('Unable to load your trips right now.');
+        setBookings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadBookings();
+  }, []);
 
-  const pastTrips = [
-    {
-      id: 3,
-      title: 'City Loft Apartment',
-      location: 'New York, NY',
-      image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80',
-      checkIn: '2024-02-10',
-      checkOut: '2024-02-15',
-      guests: 2,
-      status: 'Completed',
-    },
-  ];
+  const { upcomingTrips, pastTrips } = useMemo(() => {
+    const now = new Date();
+    const upcoming = [];
+    const past = [];
+    for (const b of bookings) {
+      const out = new Date(b.checkOut);
+      const property = b.property || {};
+      const card = {
+        id: b._id,
+        title: property.title || 'Stay',
+        location: property.location ? `${property.location.city || ''}, ${property.location.country || ''}`.trim() : '—',
+        image: property.images && property.images.length > 0
+          ? (typeof property.images[0] === 'string' ? property.images[0] : property.images[0].url)
+          : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
+        checkIn: b.checkIn?.slice(0,10),
+        checkOut: b.checkOut?.slice(0,10),
+        guests: b.totalGuests || b.guests?.adults || 1,
+        status: b.status?.charAt(0).toUpperCase() + b.status?.slice(1) || 'Confirmed',
+        propertyId: property._id,
+      };
+      if (out >= now) upcoming.push(card); else past.push(card);
+    }
+    return { upcomingTrips: upcoming, pastTrips: past };
+  }, [bookings]);
 
   const trips = activeTab === 'upcoming' ? upcomingTrips : pastTrips;
 
@@ -164,7 +178,7 @@ const Trips = () => {
           ))}
         </div>
 
-        {trips.length === 0 && (
+        {!loading && trips.length === 0 && (
           <div style={{ textAlign: 'center', padding: 'var(--spacing-3xl)' }}>
             <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: 'var(--spacing-md)' }}>
               No {activeTab} trips
@@ -190,6 +204,7 @@ const Trips = () => {
             grid-template-columns: 1fr !important;
           }
         }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
       `}</style>
     </div>
   );

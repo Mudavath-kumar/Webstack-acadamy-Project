@@ -1,4 +1,5 @@
 import Booking from '../models/Booking.js';
+import Payment from '../models/Payment.js';
 import Property from '../models/Property.js';
 
 // Helper function to check availability
@@ -65,6 +66,109 @@ export const createBooking = async (req, res, next) => {
     res.status(201).json({
       success: true,
       data: booking,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Mock checkout: compute price, mark paid, save booking and payment
+// @route   POST /api/v1/bookings/mock-checkout
+// @access  Private
+export const createMockCheckout = async (req, res, next) => {
+  try {
+    const { property: propertyId, checkIn, checkOut, guests } = req.body;
+
+    const property = await Property.findById(propertyId);
+    if (!property) {
+      return res.status(404).json({ success: false, message: 'Property not found' });
+    }
+
+    // Check availability
+    const isAvailable = await checkAvailability(propertyId, checkIn, checkOut);
+    if (!isAvailable) {
+      return res.status(400).json({ success: false, message: 'Property not available for selected dates' });
+    }
+
+    // Calculate nights and pricing
+    const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
+    const basePrice = property.pricing.basePrice;
+    const subtotal = basePrice * nights;
+    const serviceFee = Math.round(subtotal * 0.1);
+    const cleaningFee = property.pricing.cleaningFee || 0;
+    const total = subtotal + serviceFee + cleaningFee;
+
+    // Create booking marked as paid/confirmed
+    const booking = await Booking.create({
+      property: propertyId,
+      user: req.user.id,
+      host: property.owner,
+      checkIn,
+      checkOut,
+      guests,
+      totalGuests: guests.adults + (guests.children || 0),
+      nights,
+      pricing: {
+        basePrice,
+        cleaningFee,
+        serviceFee,
+        total,
+        currency: property.pricing.currency || 'INR',
+      },
+      isPaid: true,
+      totalPrice: total,
+      status: 'confirmed',
+      paymentInfo: {
+        method: 'other',
+        status: 'completed',
+        paidAt: new Date(),
+      },
+    });
+
+    // Create a mock payment record
+    const payment = await Payment.create({
+      booking: booking._id,
+      user: req.user.id,
+      property: propertyId,
+      amount: total,
+      currency: property.pricing.currency || 'INR',
+      paymentMethod: 'card',
+      paymentDetails: {
+        cardLastFour: '4242',
+        cardBrand: 'VISA',
+        transactionId: `MOCK-${Date.now()}`,
+      },
+      status: 'completed',
+      paidAt: new Date(),
+      paymentGateway: 'demo',
+      charges: {
+        baseAmount: subtotal,
+        serviceFee,
+        cleaningFee,
+        taxes: 0,
+        discount: 0,
+      },
+      metadata: {
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
+      notes: 'Mock payment successful',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Booking confirmed and paid',
+      data: {
+        booking,
+        payment,
+        summary: {
+          propertyId,
+          startDate: checkIn,
+          endDate: checkOut,
+          totalPrice: total,
+          paymentStatus: 'paid',
+        },
+      },
     });
   } catch (error) {
     next(error);

@@ -1,0 +1,7 @@
+{
+  "status": "init",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:5001/api/v1/health",
+  "backendAuthType": "public"
+}

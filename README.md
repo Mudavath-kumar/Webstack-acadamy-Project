@@ -151,6 +151,8 @@ homelyhub/
 │   └── README.md
 │
 └── README.md             # This file
+
+Important: Use only the `backend/` folder for the API. The older `server/` folder is deprecated and will be removed. Do not run or edit anything under `server/`.
 ```
 
 ## 🛠️ Tech Stack
@@ -253,8 +255,17 @@ Required:
 
 Optional:
 - `CLOUDINARY_*` - For image uploads
-- `RAZORPAY_*` - For payment processing
+- `RAZORPAY_*` - For payment processing (legacy). Local development now supports a built‑in mock payment flow.
 - `SMTP_*` - For email functionality
+
+### Roles
+- Default signup role: `guest`
+- To sign up as Host from the "Become a Host" flow, send `{ role: "host" }` or `{ signUpAsHost: true }` to `/api/v1/auth/register`.
+
+### Mock payments
+- Endpoint: `POST /api/v1/bookings/mock-checkout`
+- Body: `{ property, checkIn, checkOut, guests: { adults, children? } }`
+- Behavior: Computes price, marks booking as paid and confirmed, and creates a mock Payment record in MongoDB.
 
 ### Frontend Environment Variables
 

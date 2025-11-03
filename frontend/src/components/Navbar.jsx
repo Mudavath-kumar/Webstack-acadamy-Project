@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { Menu, X, User, Heart, MessageCircle, Home, LogOut, Settings, LayoutDashboard } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { logout } from '../store/slices/authSlice';
+import { AnimatePresence, motion } from 'framer-motion';
+import { LayoutDashboard, LogOut, Menu, Settings, User, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { logout } from '../store/slices/authSlice';
 import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
@@ -159,18 +159,33 @@ const Navbar = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                animate={{
+                  boxShadow: [
+                    '0 4px 15px rgba(102, 126, 234, 0.4)',
+                    '0 4px 25px rgba(102, 126, 234, 0.6)',
+                    '0 4px 15px rgba(102, 126, 234, 0.4)',
+                  ],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
                 onClick={() => {
                   if (user) {
-                    // User is logged in
-                    if (user.role === 'host') {
-                      navigate('/host-dashboard');
+                    // User is logged in - check if they have host role
+                    if (user.role === 'host' || user.isHost) {
+                      navigate('/host/dashboard');
                     } else {
-                      navigate('/become-host');
+                      // User needs to switch to host mode
+                      toast.info('🏠 Switching to Host Dashboard...');
+                      navigate('/host/dashboard');
                     }
                   } else {
-                    // User not logged in - save intended destination and go to login
+                    // User not logged in - redirect to login
                     toast.info('🔐 Please log in or sign up to become a host');
-                    navigate('/login', { state: { from: { pathname: '/become-host' } } });
+                    localStorage.setItem('redirectAfterLogin', '/host/dashboard');
+                    navigate('/login');
                   }
                 }}
                 style={{
@@ -183,18 +198,15 @@ const Navbar = () => {
                   fontSize: '0.9rem',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
                 }}
               >
-                🏠 {user && user.role === 'host' ? 'Host Dashboard' : 'Become a Host'}
+                🏠 {user && (user.role === 'host' || user.isHost) ? 'Host Dashboard' : 'Become a Host'}
               </motion.button>
 
               <ThemeToggle />
@@ -285,9 +297,9 @@ const Navbar = () => {
                             <span style={{ fontWeight: '500', fontSize: '0.9rem' }}>Profile Settings</span>
                           </Link>
                           
-                          {(user.role === 'host' || user.role === 'admin') && (
+                          {(user.role === 'host' || user.role === 'admin' || user.isHost) && (
                             <Link
-                              to="/host-dashboard"
+                              to="/host/dashboard"
                               onClick={() => setShowUserMenu(false)}
                               style={{
                                 display: 'flex',
@@ -445,23 +457,31 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
-              <Link to="/host-dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                <button
-                  className="btn-primary"
-                  style={{
-                    width: '100%',
-                    background: 'var(--gradient-sunset)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '0.75rem',
-                    color: 'white',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Become a Host
-                </button>
-              </Link>
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (user) {
+                    navigate('/host/dashboard');
+                  } else {
+                    toast.info('🔐 Please log in or sign up to become a host');
+                    localStorage.setItem('redirectAfterLogin', '/host/dashboard');
+                    navigate('/login');
+                  }
+                }}
+                className="btn-primary"
+                style={{
+                  width: '100%',
+                  background: 'var(--gradient-sunset)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '0.75rem',
+                  color: 'white',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
+              >
+                🏠 Become a Host
+              </button>
             </div>
           </motion.div>
         )}

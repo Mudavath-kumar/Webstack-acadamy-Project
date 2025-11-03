@@ -1,14 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  DollarSign, Home, TrendingUp, Users, Plus, Edit2, Trash2, Eye, EyeOff,
-  Calendar, MapPin, Star, Clock, CheckCircle, XCircle, AlertCircle, BarChart,
-  Settings, Image as ImageIcon, Save, X, Upload, Package
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    AlertCircle, BarChart,
+    Calendar,
+    CheckCircle,
+    DollarSign,
+    Edit2,
+    Eye, EyeOff,
+    Home,
+    MapPin,
+    Package,
+    Plus,
+    Save,
+    Star,
+    Trash2,
+    TrendingUp, Users,
+    X,
+    XCircle
 } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { propertyAPI, bookingAPI } from '../services/api';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useSelector } from 'react-redux';
 import MotionWrapper from '../components/MotionWrapper';
+import { bookingAPI, propertyAPI } from '../services/api';
 
 const HostDashboardEnhanced = () => {
   const { user } = useSelector((state) => state.firebaseAuth || {});
@@ -545,7 +558,7 @@ const HostDashboardEnhanced = () => {
                                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Rating</span>
                                 <p style={{ fontSize: '1.25rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                   <Star size={18} fill="#F59E0B" color="#F59E0B" />
-                                  {property.rating || '0.0'}
+                                  {typeof property.rating === 'number' ? property.rating : (property.rating?.average ?? '0.0')}
                                 </p>
                               </div>
                             </div>

@@ -1,5 +1,5 @@
-import User from '../models/User.js';
 import crypto from 'crypto';
+import User from '../models/User.js';
 
 // Helper function to send token response
 const sendTokenResponse = (user, statusCode, res) => {
@@ -33,7 +33,7 @@ const sendTokenResponse = (user, statusCode, res) => {
 // @access  Public
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password, phone, role } = req.body;
+    const { name, email, password, phone, role, signUpAsHost } = req.body;
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -45,12 +45,15 @@ export const register = async (req, res, next) => {
     }
 
     // Create user
+    // Determine role: explicit 'host' wins, or signUpAsHost truthy; otherwise default 'guest'
+    const resolvedRole = role === 'host' || signUpAsHost ? 'host' : 'guest';
+
     const user = await User.create({
       name,
       email,
       password,
       phone,
-      role: role || 'user',
+      role: resolvedRole,
     });
 
     sendTokenResponse(user, 201, res);

@@ -1,32 +1,151 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
-import { ThemeProvider } from './context/ThemeContext';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import Explore from './pages/Explore';
-import ListingDetail from './pages/ListingDetailEnhanced';
-import Checkout from './pages/CheckoutEnhanced';
-import Trips from './pages/Trips';
-import Messages from './pages/Messages';
-import Wishlists from './pages/Wishlists';
-import Profile from './pages/ProfileEnhanced';
-import HostDashboard from './pages/HostDashboardEnhanced';
-import Admin from './pages/Admin';
-import NotFound from './pages/NotFound';
-import CategoryPage from './pages/CategoryPage';
-import DestinationPage from './pages/DestinationPage';
-import PropertyTypePage from './pages/PropertyTypePage';
-import AmenityPage from './pages/AmenityPage';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import ProtectedRoute from './components/ProtectedRoute';
-import HostRoute from './components/HostRoute';
-import MapView from './pages/MapView';
-import AITripPlanner from './components/AITripPlanner';
+import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import AIChatAssistant from './components/AIChatAssistant';
+import AITripPlanner from './components/AITripPlanner';
+import Footer from './components/Footer';
+import HostRoute from './components/HostRoute';
+import Navbar from './components/Navbar';
+import PageTransition from './components/PageTransition';
+import ProtectedRoute from './components/ProtectedRoute';
+import { ThemeProvider } from './context/ThemeContext';
+import Admin from './pages/Admin';
+import AmenityPage from './pages/AmenityPage';
 import BecomeHost from './pages/BecomeHost';
+import CategoryPage from './pages/CategoryPage';
+import Checkout from './pages/CheckoutEnhanced';
+import DestinationPage from './pages/DestinationPage';
+import Explore from './pages/Explore';
+import Home from './pages/Home';
+import ListingDetail from './pages/ListingDetailEnhanced';
+import Login from './pages/Login';
+import MapView from './pages/MapView';
+import Messages from './pages/Messages';
+import NotFound from './pages/NotFound';
+import Profile from './pages/ProfileEnhanced';
+import PropertyTypePage from './pages/PropertyTypePage';
+import Signup from './pages/Signup';
+import Trips from './pages/Trips';
+import Wishlists from './pages/Wishlists';
+
+// Host Dashboard Components
+import DashboardOverview from './pages/host/DashboardOverview';
+import Earnings from './pages/host/Earnings';
+import HostBookings from './pages/host/HostBookings';
+import HostDashboard from './pages/host/HostDashboard';
+import MyProperties from './pages/host/MyProperties';
+import PropertyForm from './pages/host/PropertyForm';
+
+const AppRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+        <Route path="/guest/home" element={<PageTransition><Home /></PageTransition>} />
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
+        <Route path="/explore" element={<PageTransition><Explore /></PageTransition>} />
+        <Route path="/listing/:id" element={<PageTransition><ListingDetail /></PageTransition>} />
+        <Route path="/property/:id" element={<PageTransition><ListingDetail /></PageTransition>} />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <PageTransition><Checkout /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trips"
+          element={
+            <ProtectedRoute>
+              <PageTransition><Trips /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/guest/bookings"
+          element={
+            <ProtectedRoute>
+              <PageTransition><Trips /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <PageTransition><Messages /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wishlists"
+          element={
+            <ProtectedRoute>
+              <PageTransition><Wishlists /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <PageTransition><Profile /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        {/* Host Dashboard Routes - Nested */}
+        <Route
+          path="/host"
+          element={
+            <HostRoute>
+              <HostDashboard />
+            </HostRoute>
+          }
+        >
+          <Route index element={<DashboardOverview />} />
+          <Route path="dashboard" element={<DashboardOverview />} />
+          <Route path="properties" element={<MyProperties />} />
+          <Route path="properties/new" element={<PropertyForm />} />
+          <Route path="properties/edit/:id" element={<PropertyForm />} />
+          <Route path="bookings" element={<HostBookings />} />
+          <Route path="earnings" element={<Earnings />} />
+        </Route>
+
+        {/* Legacy routes - redirect to new structure */}
+        <Route
+          path="/host-dashboard"
+          element={
+            <HostRoute>
+              <HostDashboard />
+            </HostRoute>
+          }
+        >
+          <Route index element={<DashboardOverview />} />
+        </Route>
+        <Route
+          path="/become-host"
+          element={
+            <ProtectedRoute>
+              <PageTransition><BecomeHost /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
+        <Route path="/category/:category" element={<PageTransition><CategoryPage /></PageTransition>} />
+        <Route path="/destination/:destination" element={<PageTransition><DestinationPage /></PageTransition>} />
+        <Route path="/property/:type" element={<PageTransition><PropertyTypePage /></PageTransition>} />
+        <Route path="/amenity/:amenity" element={<PageTransition><AmenityPage /></PageTransition>} />
+        <Route path="/map" element={<PageTransition><MapView /></PageTransition>} />
+        <Route path="/trip-planner" element={<PageTransition><AITripPlanner /></PageTransition>} />
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 function App() {
   return (
@@ -63,30 +182,8 @@ function App() {
         />
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
           <Navbar />
-          <main style={{ flex: 1 }}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/listing/:id" element={<ListingDetail />} />
-              <Route path="/property/:id" element={<ListingDetail />} />
-              <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-              <Route path="/trips" element={<ProtectedRoute><Trips /></ProtectedRoute>} />
-              <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-              <Route path="/wishlists" element={<ProtectedRoute><Wishlists /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/host-dashboard" element={<HostRoute><HostDashboard /></HostRoute>} />
-              <Route path="/become-host" element={<HostRoute><BecomeHost /></HostRoute>} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/category/:category" element={<CategoryPage />} />
-              <Route path="/destination/:destination" element={<DestinationPage />} />
-              <Route path="/property/:type" element={<PropertyTypePage />} />
-              <Route path="/amenity/:amenity" element={<AmenityPage />} />
-              <Route path="/map" element={<MapView />} />
-              <Route path="/trip-planner" element={<AITripPlanner />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+          <main style={{ flex: 1, position: 'relative' }}>
+            <AppRoutes />
           </main>
           <AIChatAssistant />
           <Footer />

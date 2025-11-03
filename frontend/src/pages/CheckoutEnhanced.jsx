@@ -1,15 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { 
-  CreditCard, Lock, Calendar, Users, MapPin, AlertCircle, CheckCircle,
-  Loader, Shield, Clock
+import {
+    AlertCircle,
+    Calendar,
+    CheckCircle,
+    Clock,
+    CreditCard,
+    Loader,
+    Lock,
+    MapPin,
+    Shield,
+    Users
 } from 'lucide-react';
-import { bookingAPI, paymentAPI } from '../services/api';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useSelector } from 'react-redux';
+import { useLocation, useNavigate } from 'react-router-dom';
 import MotionWrapper from '../components/MotionWrapper';
-import OTPVerificationModal from '../components/OTPVerificationModal';
+import { bookingAPI, propertyAPI } from '../services/api';
 
 const CheckoutEnhanced = () => {
   const navigate = useNavigate();
@@ -28,6 +35,7 @@ const CheckoutEnhanced = () => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [currentBookingId, setCurrentBookingId] = useState(null);
+  const isValidObjectId = (val) => /^[a-f\d]{24}$/i.test(String(val || ''));
   
   // Get booking data from location state or use demo data
   const [booking, setBooking] = useState(location.state?.booking || {
@@ -53,6 +61,103 @@ const CheckoutEnhanced = () => {
     phone: '',
     specialRequests: '',
   });
+
+  // Hydrate booking from URL query params if present (listingId, checkIn, checkOut, guests)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const listingId = params.get('listingId') || params.get('propertyId') || params.get('id');
+    const checkIn = params.get('checkIn');
+    const checkOut = params.get('checkOut');
+    const guests = parseInt(params.get('guests') || '0', 10);
+
+    // Skip if already have valid booking data from location state
+    if (location.state?.booking?.property?._id && location.state.booking.property._id !== 'demo-property') {
+      return;
+    }
+
+    // Only attempt hydration when listingId is present and valid and not a demo
+    if (!listingId || listingId === 'demo-property' || !isValidObjectId(listingId)) {
+      // If we have demo data and query params, update dates/guests but keep demo property
+      if (checkIn || checkOut || guests > 0) {
+        const computeNights = (ci, co) => {
+          if (!ci || !co) return booking.nights || 1;
+          const inDate = new Date(ci);
+          const outDate = new Date(co);
+          if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) return booking.nights || 1;
+          const diffMs = outDate - inDate;
+          return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        };
+        
+        setBooking(prev => ({
+          ...prev,
+          checkIn: checkIn || prev.checkIn,
+          checkOut: checkOut || prev.checkOut,
+          guests: guests > 0 ? guests : prev.guests,
+          nights: computeNights(checkIn || prev.checkIn, checkOut || prev.checkOut),
+        }));
+      }
+      if (listingId && !isValidObjectId(listingId)) {
+        toast('Using demo property. Real bookings require a valid listing from Explore.', { icon: 'ℹ️' });
+      }
+      return;
+    }
+
+    // Helper to compute nights difference (min 1)
+    const computeNights = (ci, co) => {
+      if (!ci || !co) return 1;
+      const inDate = new Date(ci);
+      const outDate = new Date(co);
+      if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) return 1;
+      const diffMs = outDate - inDate;
+      const nights = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+      return nights;
+    };
+
+    (async () => {
+      try {
+        const { data } = await propertyAPI.getOne(listingId);
+        const prop = data?.data || data?.property || data; // tolerate various API shapes
+        if (!prop?._id) throw new Error('Invalid property');
+
+        // Normalize fields for checkout view
+        const locationString = prop.location?.city && prop.location?.country
+          ? `${prop.location.city}, ${prop.location.country}`
+          : (prop.location?.city || prop.location?.country || prop.location?.address || '');
+        const imageUrls = Array.isArray(prop.images)
+          ? prop.images.map((img) => (typeof img === 'string' ? img : img?.url)).filter(Boolean)
+          : [];
+        const pricePerNight = prop.pricing?.basePrice ?? prop.price ?? 0;
+        const cleaningFee = prop.pricing?.cleaningFee ?? 0;
+        const serviceFee = prop.pricing?.serviceFee ?? 0;
+
+        const ci = checkIn || booking.checkIn;
+        const co = checkOut || booking.checkOut;
+        const nights = computeNights(ci, co);
+
+        setBooking({
+          property: {
+            _id: prop._id,
+            title: prop.title,
+            location: locationString,
+            images: imageUrls.length ? imageUrls : ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&q=80'],
+          },
+          checkIn: ci,
+          checkOut: co,
+          guests: guests > 0 ? guests : (booking.guests || 1),
+          nights,
+          pricePerNight,
+          cleaningFee,
+          serviceFee,
+          gst: Math.round((nights * pricePerNight) * 0.18),
+        });
+      } catch (err) {
+        console.error('Failed to hydrate checkout from query params:', err);
+        // Don't redirect immediately - allow demo mode to work
+        toast.error('Using demo property. Real property bookings require valid property IDs from the Explore page.');
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   // Calculate total
   const calculateTotal = () => {
@@ -88,93 +193,36 @@ const CheckoutEnhanced = () => {
     setIsProcessing(true);
 
     try {
-      // Validate property ID
-      if (!booking.property?._id || booking.property._id === 'demo-property') {
-        toast.error('Please select a valid property from the listings page');
-        navigate('/explore');
+      // Block demo/invalid property bookings
+      if (!booking.property?._id || booking.property._id === 'demo-property' || !isValidObjectId(booking.property._id)) {
+        toast.error('Demo bookings are not supported. Please select a real property from the Explore page to make a booking.');
+        setIsProcessing(false);
+        setTimeout(() => navigate('/explore'), 2000);
         return;
       }
 
-      // Create booking first
-      const bookingResponse = await bookingAPI.createBooking({
+      // One-step mock checkout: server computes price, marks paid, and creates booking + payment
+      const resp = await bookingAPI.mockCheckout({
         property: booking.property._id,
         checkIn: booking.checkIn,
         checkOut: booking.checkOut,
         guests: {
           adults: booking.guests || 2,
           children: 0,
-          infants: 0
-        },
-        pricing: {
-          basePrice: booking.pricePerNight || 0,
-          cleaningFee: booking.cleaningFee || 0,
-          serviceFee: booking.serviceFee || 0,
-          taxes: booking.gst || 0,
-          total: total / 100
-        },
-        guestInfo: guestInfo,
-      });
-
-      if (!bookingResponse.data.success) {
-        throw new Error('Failed to create booking');
-      }
-
-      const bookingId = bookingResponse.data.data._id;
-
-      // Create MongoDB payment order
-      const orderResponse = await paymentAPI.createOrder({
-        amount: total / 100, // Convert to actual amount
-        bookingId: bookingId,
-        paymentMethod: paymentMethod,
-        currency: 'USD',
-      });
-
-      if (!orderResponse.data.success) {
-        throw new Error('Failed to create payment order');
-      }
-
-      const paymentId = orderResponse.data.data.paymentId;
-      toast.loading('Processing payment...');
-
-      // Process payment (MongoDB-based)
-      const processResponse = await paymentAPI.processPayment({
-        paymentId: paymentId,
-        bookingId: bookingId,
-        paymentMethod: paymentMethod,
-        paymentDetails: {
-          cardLastFour: '4242',
-          cardBrand: 'Visa',
         },
       });
 
-      if (!processResponse.data.success) {
-        throw new Error('Failed to process payment');
-      }
-
-      // Wait a moment for processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Verify payment
-      const verifyResponse = await paymentAPI.verifyPayment({
-        paymentId: paymentId,
-        bookingId: bookingId,
-      });
-
-      if (verifyResponse.data.success) {
-        toast.dismiss();
-        toast.success('Payment successful! Please verify OTP to confirm booking.', { duration: 5000 });
-        
-        // Show OTP verification modal after payment success
-        setCurrentBookingId(bookingId);
-        setShowOTPModal(true);
+      if (resp.data?.success) {
+        toast.success('Booking confirmed!');
+        navigate('/guest/bookings', { replace: true });
       } else {
-        throw new Error('Payment verification failed');
+        throw new Error('Mock checkout failed');
       }
-      
+
       setIsProcessing(false);
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error(error.response?.data?.message || 'Payment failed. Please try again.');
+      toast.error(error.response?.data?.message || 'Checkout failed. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -418,7 +466,7 @@ const CheckoutEnhanced = () => {
                 </h2>
 
                 <img
-                  src={booking.property.images[0]}
+                  src={booking.property.images?.[0] || 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&q=80'}
                   alt={booking.property.title}
                   style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-lg)' }}
                 />
@@ -523,13 +571,7 @@ const CheckoutEnhanced = () => {
         }
       `}</style>
 
-      {/* OTP Verification Modal */}
-      <OTPVerificationModal
-        isOpen={showOTPModal}
-        onClose={() => setShowOTPModal(false)}
-        bookingId={currentBookingId}
-        onVerificationSuccess={handleOTPVerificationSuccess}
-      />
+      {/* OTP verification is not required for mock checkout; modal disabled */}
     </div>
   );
 };

@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Filter, SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import ListingCard from '../components/ListingCard';
 import MotionWrapper from '../components/MotionWrapper';
+import { propertyAPI } from '../services/api';
 
 const Explore = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
+  
+  const [listings, setListings] = useState([]);
+  const [totalProperties, setTotalProperties] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     priceMin: 0,
     priceMax: 1000,
@@ -17,29 +22,62 @@ const Explore = () => {
     amenities: [],
   });
 
-  // Mock listings data
-  const listings = Array.from({ length: 30 }, (_, i) => ({
-    id: i + 1,
-    title: `Beautiful ${['Villa', 'Apartment', 'Cabin', 'House'][i % 4]} ${i + 1}`,
-    location: ['Paris, France', 'Tokyo, Japan', 'New York, USA', 'Bali, Indonesia', 'London, UK', 'Dubai, UAE'][i % 6],
-    image: [
-      'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80',
-      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80',
-      'https://images.unsplash.com/photo-1542718610-a1d656d1884c?w=800&q=80',
-      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800&q=80',
-      'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
-      'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&q=80',
-    ][i % 6],
-    price: 15000 + i * 5000,
-    rating: 4.5 + (i % 5) / 10,
-    guests: 2 + (i % 4),
-    bedrooms: 1 + (i % 3),
-    beds: 1 + (i % 4),
-    featured: i % 3 === 0,
-  }));
+  // Fetch properties from API (prefer real data; fallback to mock only if needed)
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setLoading(true);
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+        };
 
-  const amenities = ['WiFi', 'Kitchen', 'Pool', 'Parking', 'Pet-friendly', 'Air conditioning', 'Hot tub', 'Gym'];
-  const propertyTypes = ['All', 'House', 'Apartment', 'Villa', 'Cabin', 'Condo'];
+        // Add filters if set
+        if (filters.guests > 1) params.guests = filters.guests;
+        if (filters.bedrooms > 0) params.bedrooms = filters.bedrooms;
+        if (filters.propertyType !== 'all') params.propertyType = filters.propertyType.toLowerCase();
+        if (filters.priceMin > 0) params.minPrice = filters.priceMin;
+        if (filters.priceMax < 1000) params.maxPrice = filters.priceMax * 1000; // Convert to INR
+        if (filters.amenities.length > 0) params.amenities = filters.amenities.join(',');
+
+        const { data } = await propertyAPI.getAll(params);
+
+        if (data.success && Array.isArray(data.data)) {
+          // Normalize property data for ListingCard
+          const normalizedListings = data.data.map(prop => ({
+            _id: prop._id,
+            id: prop._id, // for compatibility
+            title: prop.title,
+            location: `${prop.location.city}, ${prop.location.country}`,
+            image: prop.images[0]?.url || 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80',
+            price: prop.pricing.basePrice,
+            rating: prop.rating?.average || 4.5,
+            guests: prop.capacity.guests,
+            bedrooms: prop.capacity.bedrooms,
+            beds: prop.capacity.beds,
+            featured: prop.featured,
+            favoriteCount: prop.favoriteCount || 0,
+          }));
+          setListings(normalizedListings);
+          setTotalProperties(data.total || normalizedListings.length);
+        } else {
+          setListings([]);
+          setTotalProperties(0);
+        }
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+        setListings([]);
+        setTotalProperties(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, [currentPage, filters, itemsPerPage]);
+
+  const amenities = ['wifi', 'kitchen', 'pool', 'parking', 'pet-friendly', 'air-conditioning', 'hot-tub', 'gym'];
+  const propertyTypes = ['all', 'house', 'apartment', 'villa', 'cabin', 'condo'];
 
   return (
     <div style={{ paddingTop: '100px', minHeight: '100vh' }}>
@@ -136,7 +174,10 @@ const Explore = () => {
                       type="number"
                       placeholder="Min"
                       value={filters.priceMin}
-                      onChange={(e) => setFilters({ ...filters, priceMin: e.target.value })}
+                      onChange={(e) => {
+                        setFilters({ ...filters, priceMin: e.target.value });
+                        setCurrentPage(1);
+                      }}
                       className="input"
                       style={{ flex: 1 }}
                     />
@@ -145,7 +186,10 @@ const Explore = () => {
                       type="number"
                       placeholder="Max"
                       value={filters.priceMax}
-                      onChange={(e) => setFilters({ ...filters, priceMax: e.target.value })}
+                      onChange={(e) => {
+                        setFilters({ ...filters, priceMax: e.target.value });
+                        setCurrentPage(1);
+                      }}
                       className="input"
                       style={{ flex: 1 }}
                     />
@@ -292,21 +336,42 @@ const Explore = () => {
                 marginBottom: 'var(--spacing-2xl)',
               }}
             >
-              {(() => {
-                const indexOfLastItem = currentPage * itemsPerPage;
-                const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-                const currentListings = listings.slice(indexOfFirstItem, indexOfLastItem);
-                
-                return currentListings.map((listing, index) => (
-                  <MotionWrapper key={listing.id} delay={index * 0.05}>
+              {loading ? (
+                // Loading skeleton
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      height: '400px',
+                      borderRadius: 'var(--radius-lg)',
+                      background: 'var(--bg-secondary)',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                ))
+              ) : listings.length === 0 ? (
+                <div style={{ 
+                  gridColumn: '1 / -1', 
+                  textAlign: 'center', 
+                  padding: 'var(--spacing-3xl)',
+                  color: 'var(--text-secondary)' 
+                }}>
+                  <p style={{ fontSize: '1.2rem', marginBottom: 'var(--spacing-md)' }}>
+                    No properties found matching your criteria.
+                  </p>
+                  <p>Try adjusting your filters or check back later for new listings.</p>
+                </div>
+              ) : (
+                listings.map((listing, index) => (
+                  <MotionWrapper key={listing._id} delay={index * 0.05}>
                     <ListingCard listing={listing} />
                   </MotionWrapper>
-                ));
-              })()}
+                ))
+              )}
             </div>
 
             {/* Pagination */}
-            {listings.length > itemsPerPage && (
+            {!loading && totalProperties > itemsPerPage && (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-2xl)' }}>
                 {/* Previous Button */}
                 <motion.button
@@ -334,35 +399,39 @@ const Explore = () => {
 
                 {/* Page Numbers */}
                 <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                  {Array.from({ length: Math.ceil(listings.length / itemsPerPage) }, (_, i) => i + 1).map(pageNum => (
-                    <motion.button
-                      key={pageNum}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setCurrentPage(pageNum)}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: 'var(--radius-lg)',
-                        border: '2px solid var(--border-color)',
-                        background: currentPage === pageNum ? 'var(--primary)' : 'var(--bg-primary)',
-                        color: currentPage === pageNum ? 'white' : 'var(--text-primary)',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      {pageNum}
-                    </motion.button>
-                  ))}
+                  {Array.from({ length: Math.min(5, Math.ceil(totalProperties / itemsPerPage)) }, (_, i) => {
+                    const pageNum = i + Math.max(1, currentPage - 2);
+                    if (pageNum > Math.ceil(totalProperties / itemsPerPage)) return null;
+                    return (
+                      <motion.button
+                        key={pageNum}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setCurrentPage(pageNum)}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: 'var(--radius-lg)',
+                          border: '2px solid var(--border-color)',
+                          background: currentPage === pageNum ? 'var(--primary)' : 'var(--bg-primary)',
+                          color: currentPage === pageNum ? 'white' : 'var(--text-primary)',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        {pageNum}
+                      </motion.button>
+                    );
+                  })}
                 </div>
 
                 {/* Next Button */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(listings.length / itemsPerPage)))}
-                  disabled={currentPage === Math.ceil(listings.length / itemsPerPage)}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalProperties / itemsPerPage)))}
+                  disabled={currentPage === Math.ceil(totalProperties / itemsPerPage)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -370,11 +439,11 @@ const Explore = () => {
                     padding: 'var(--spacing-md) var(--spacing-lg)',
                     borderRadius: 'var(--radius-lg)',
                     border: '2px solid var(--border-color)',
-                    background: currentPage === Math.ceil(listings.length / itemsPerPage) ? 'var(--bg-secondary)' : 'var(--bg-primary)',
-                    color: currentPage === Math.ceil(listings.length / itemsPerPage) ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                    background: currentPage === Math.ceil(totalProperties / itemsPerPage) ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                    color: currentPage === Math.ceil(totalProperties / itemsPerPage) ? 'var(--text-tertiary)' : 'var(--text-primary)',
                     fontWeight: '600',
-                    cursor: currentPage === Math.ceil(listings.length / itemsPerPage) ? 'not-allowed' : 'pointer',
-                    opacity: currentPage === Math.ceil(listings.length / itemsPerPage) ? 0.5 : 1,
+                    cursor: currentPage === Math.ceil(totalProperties / itemsPerPage) ? 'not-allowed' : 'pointer',
+                    opacity: currentPage === Math.ceil(totalProperties / itemsPerPage) ? 0.5 : 1,
                   }}
                 >
                   Next
@@ -385,6 +454,13 @@ const Explore = () => {
           </div>
         </div>
       </div>
+      
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 };

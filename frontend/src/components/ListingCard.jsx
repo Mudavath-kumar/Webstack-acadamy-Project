@@ -1,22 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { Heart, Star, MapPin } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import axios from 'axios';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Bath, BedDouble, Heart, MapPin, Star, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 const ListingCard = ({ listing }) => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(listing.favoriteCount || 0);
+  const [activeImage, setActiveImage] = useState(0);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   
   // MongoDB uses _id, but mock data uses id
   const propertyId = listing._id || listing.id;
+  const base = import.meta.env.VITE_API_URL || '/api/v1';
+  const isValidObjectId = (val) => /^[a-f\d]{24}$/i.test(String(val || ''));
+  const fallbackImage = 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80';
+
+  const galleryImages = useMemo(() => {
+    const rawImages = Array.isArray(listing.images)
+      ? listing.images
+      : listing.gallery;
+
+    const normalized = Array.isArray(rawImages)
+      ? rawImages
+          .map((image) => (typeof image === 'string' ? image : image?.url))
+          .filter(Boolean)
+      : [];
+
+    if (listing.image && typeof listing.image === 'string') {
+      normalized.unshift(listing.image);
+    }
+
+    return normalized.length ? Array.from(new Set(normalized)) : [fallbackImage];
+  }, [listing.image, listing.images, listing.gallery]);
 
   useEffect(() => {
-    // Check if property is in user's favorites
-    if (isAuthenticated && propertyId) {
+    setActiveImage(0);
+  }, [galleryImages, propertyId]);
+
+  useEffect(() => {
+    // Check if property is in user's favorites (real properties only)
+    if (isAuthenticated && propertyId && isValidObjectId(propertyId)) {
       checkFavoriteStatus();
     }
   }, [isAuthenticated, propertyId]);
@@ -27,7 +53,7 @@ const ListingCard = ({ listing }) => {
       if (!token) return;
 
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/favorites/check/${propertyId}`,
+        `${base}/favorites/check/${propertyId}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -47,6 +73,12 @@ const ListingCard = ({ listing }) => {
       return;
     }
 
+    // Prevent favorites for demo/invalid IDs
+    if (!isValidObjectId(propertyId)) {
+      toast('Favorites are available for real listings only.', { icon: '🔖' });
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -57,7 +89,7 @@ const ListingCard = ({ listing }) => {
       if (isFavorited) {
         // Remove from favorites
         await axios.delete(
-          `${import.meta.env.VITE_API_URL}/favorites/${propertyId}`,
+          `${base}/favorites/${propertyId}`,
           {
             headers: { Authorization: `Bearer ${token}` }
           }
@@ -68,7 +100,7 @@ const ListingCard = ({ listing }) => {
       } else {
         // Add to favorites
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/favorites/${propertyId}`,
+          `${base}/favorites/${propertyId}`,
           {},
           {
             headers: { Authorization: `Bearer ${token}` }
@@ -86,8 +118,8 @@ const ListingCard = ({ listing }) => {
 
   return (
     <motion.div
-      whileHover={{ y: -8 }}
-      transition={{ duration: 0.3 }}
+      whileHover={{ y: -12 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
       style={{ position: 'relative' }}
     >
       <Link to={`/listing/${propertyId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -97,27 +129,51 @@ const ListingCard = ({ listing }) => {
             padding: 0,
             overflow: 'hidden',
             cursor: 'pointer',
+            borderRadius: 'var(--radius-2xl)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 22px 45px rgba(15, 23, 42, 0.15)',
           }}
         >
-          {/* Image */}
-          <div style={{ position: 'relative', width: '100%', paddingBottom: '75%', overflow: 'hidden', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0' }}>
-            <img
-              src={listing.image}
-              alt={listing.title}
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              paddingBottom: '72%',
+              overflow: 'hidden',
+              borderRadius: 'var(--radius-2xl) var(--radius-2xl) 0 0',
+              background: 'var(--bg-secondary)',
+            }}
+          >
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={`${propertyId}-${galleryImages[activeImage]}`}
+                src={galleryImages[activeImage] || fallbackImage}
+                alt={listing.title}
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  filter: 'saturate(1.05)',
+                }}
+              />
+            </AnimatePresence>
+
+            <div
               style={{
                 position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                transition: 'transform 0.3s ease',
+                inset: 0,
+                background:
+                  'linear-gradient(180deg, rgba(15, 23, 42, 0.0) 10%, rgba(15, 23, 42, 0.45) 100%)',
               }}
-              onMouseEnter={(e) => (e.target.style.transform = 'scale(1.1)')}
-              onMouseLeave={(e) => (e.target.style.transform = 'scale(1)')}
             />
-            
-            {/* Like Button */}
+
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -126,10 +182,10 @@ const ListingCard = ({ listing }) => {
                 position: 'absolute',
                 top: '12px',
                 right: '12px',
-                width: '36px',
-                height: '36px',
+                width: '38px',
+                height: '38px',
                 borderRadius: 'var(--radius-full)',
-                background: 'rgba(255, 255, 255, 0.9)',
+                background: 'rgba(255, 255, 255, 0.92)',
                 border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
@@ -154,7 +210,9 @@ const ListingCard = ({ listing }) => {
                   left: '12px',
                   padding: '0.4rem 0.8rem',
                   borderRadius: 'var(--radius-full)',
-                  background: 'var(--gradient-sunset)',
+                  background: 'rgba(255, 255, 255, 0.16)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(255,255,255,0.35)',
                   color: 'white',
                   fontSize: '0.75rem',
                   fontWeight: '600',
@@ -163,66 +221,136 @@ const ListingCard = ({ listing }) => {
                 Featured
               </div>
             )}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '18px',
+                left: '18px',
+                right: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                color: '#fff',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                <span style={{ fontWeight: 600, fontSize: '0.75rem', opacity: 0.85 }}>Starting from</span>
+                <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>₹{(listing.price || 0).toLocaleString()}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.8rem', borderRadius: '999px', background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)' }}>
+                <Star size={16} color="#FACC15" fill="#FACC15" />
+                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{listing.rating ?? '4.8'}</span>
+              </div>
+            </div>
+
+            {galleryImages.length > 1 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '12px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  gap: '6px',
+                }}
+              >
+                {galleryImages.slice(0, 4).map((thumb, index) => (
+                  <button
+                    key={`${propertyId}-thumb-${index}`}
+                    type="button"
+                    aria-label={`Preview image ${index + 1}`}
+                    onMouseEnter={() => setActiveImage(index)}
+                    onFocus={() => setActiveImage(index)}
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: 'var(--radius-md)',
+                      border: index === activeImage ? '2px solid #fff' : '1px solid rgba(255,255,255,0.4)',
+                      overflow: 'hidden',
+                      padding: 0,
+                      cursor: 'pointer',
+                      background: 'rgba(15, 23, 42, 0.35)',
+                    }}
+                  >
+                    <img
+                      src={thumb || fallbackImage}
+                      alt="Preview thumbnail"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Content */}
-          <div style={{ padding: '1rem' }}>
-            {/* Location & Rating */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                <MapPin size={14} />
-                <span>{listing.location}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Star size={14} fill="#FFD700" color="#FFD700" />
-                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                  {listing.rating}
+          <div style={{ padding: '1.2rem 1.4rem 1.35rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: '75%' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <MapPin size={15} />
+                  {listing.location || 'Dream destination'}
                 </span>
+                <h3
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '1.18rem',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.35,
+                    margin: 0,
+                  }}
+                >
+                  {listing.title}
+                </h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Rated</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
+                  <Star size={16} color="#FACC15" fill="#FACC15" />
+                  <span style={{ color: 'var(--text-primary)' }}>{listing.rating ?? '4.8'}</span>
+                </div>
               </div>
             </div>
 
-            {/* Title */}
-            <h3
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '1rem',
-                fontWeight: '600',
-                marginBottom: '0.5rem',
-                color: 'var(--text-primary)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {listing.title}
-            </h3>
-
-            {/* Details */}
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-              {listing.guests} guests · {listing.bedrooms} bedrooms · {listing.beds} beds
-            </p>
-
-            {/* Price */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-              <span
-                style={{
-                  fontSize: '1.1rem',
-                  fontWeight: '700',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                ₹{listing.price?.toLocaleString()}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Users size={16} />
+                {listing.guests || 1} guests
               </span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>/ night</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <BedDouble size={16} />
+                {listing.bedrooms || listing.beds || 1} beds
+              </span>
+              {listing.bathrooms && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Bath size={16} />
+                  {listing.bathrooms} baths
+                </span>
+              )}
             </div>
 
-            {/* Favorite Count */}
-            {favoriteCount > 0 && (
-              <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                <Heart size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                {favoriteCount} {favoriteCount === 1 ? 'person' : 'people'} favorited this
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+                <span
+                  style={{
+                    fontSize: '1.3rem',
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  ₹{(listing.price || 0).toLocaleString()}
+                </span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>/ night</span>
               </div>
-            )}
+
+              {favoriteCount > 0 && (
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Heart size={13} color="#FF385C" />
+                  {favoriteCount} {favoriteCount === 1 ? 'guest' : 'guests'} loved this
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Link>

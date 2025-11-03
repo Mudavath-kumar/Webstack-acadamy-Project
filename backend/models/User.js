@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema(
   {
@@ -15,8 +15,9 @@ const UserSchema = new mongoose.Schema(
       required: [true, 'Please add an email'],
       unique: true,
       lowercase: true,
+      // Allow modern TLDs (2+ chars) and subdomains; simpler and more permissive than the old 2-3 char TLD regex
       match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i,
         'Please add a valid email',
       ],
     },
@@ -32,8 +33,8 @@ const UserSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'host', 'admin'],
-      default: 'user',
+      enum: ['guest', 'host', 'admin'],
+      default: 'guest',
     },
     avatar: {
       public_id: String,
