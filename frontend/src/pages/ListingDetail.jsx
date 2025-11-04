@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Star, Users, Home, Wifi, Car, Waves, ChevronLeft, ChevronRight, Shield, Calendar } from 'lucide-react';
+import { Car, ChevronLeft, ChevronRight, MapPin, Shield, Star, Waves, Wifi } from 'lucide-react';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import HostCard from '../components/HostCard';
-import ReviewCard from '../components/ReviewCard';
 import ListingCard from '../components/ListingCard';
 import MotionWrapper from '../components/MotionWrapper';
+import ReviewCard from '../components/ReviewCard';
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -230,7 +230,11 @@ const ListingDetail = () => {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)' }}>
                     <MapPin size={16} />
-                    <span>{listing.location}</span>
+                    <span>
+                      {typeof listing.location === 'object' 
+                        ? `${listing.location.city || ''}, ${listing.location.country || ''}`.trim() || 'Location not specified'
+                        : listing.location || 'Location not specified'}
+                    </span>
                   </div>
                 </div>
               </div>

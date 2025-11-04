@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
+import BookingConfirmationModal from '../components/BookingConfirmationModal';
 import MotionWrapper from '../components/MotionWrapper';
 import { bookingAPI, propertyAPI } from '../services/api';
 
@@ -34,6 +35,8 @@ const CheckoutEnhanced = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [showOTPModal, setShowOTPModal] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [confirmedBooking, setConfirmedBooking] = useState(null);
   const [currentBookingId, setCurrentBookingId] = useState(null);
   const isValidObjectId = (val) => /^[a-f\d]{24}$/i.test(String(val || ''));
   
@@ -213,8 +216,11 @@ const CheckoutEnhanced = () => {
       });
 
       if (resp.data?.success) {
-        toast.success('Booking confirmed!');
-        navigate('/guest/bookings', { replace: true });
+        setConfirmedBooking({
+          ...booking,
+          ...resp.data.data,
+        });
+        setShowConfirmationModal(true);
       } else {
         throw new Error('Mock checkout failed');
       }
@@ -234,14 +240,9 @@ const CheckoutEnhanced = () => {
   };
 
   // Handle OTP verification success
-  const handleOTPVerificationSuccess = (booking) => {
-    toast.success('Booking confirmed successfully! 🎉');
-    navigate('/trips', {
-      state: {
-        bookingSuccess: true,
-        bookingId: booking._id,
-      },
-    });
+  const handleOTPVerificationSuccess = (bookingData) => {
+    setConfirmedBooking(bookingData);
+    setShowConfirmationModal(true);
   };
 
   if (!booking.property) {
@@ -476,7 +477,9 @@ const CheckoutEnhanced = () => {
                 </h3>
                 <p style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 'var(--spacing-lg)' }}>
                   <MapPin size={14} />
-                  {booking.property.location}
+                  {typeof booking.property.location === 'string' 
+                    ? booking.property.location 
+                    : `${booking.property.location?.city || ''}, ${booking.property.location?.country || ''}`.trim() || 'Location unavailable'}
                 </p>
 
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)' }}>
@@ -572,6 +575,13 @@ const CheckoutEnhanced = () => {
       `}</style>
 
       {/* OTP verification is not required for mock checkout; modal disabled */}
+
+      {/* Booking Confirmation Modal */}
+      <BookingConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={() => setShowConfirmationModal(false)}
+        booking={confirmedBooking}
+      />
     </div>
   );
 };

@@ -1,35 +1,33 @@
-import React from 'react';
+import { motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import ListingCard from '../components/ListingCard';
 import MotionWrapper from '../components/MotionWrapper';
-import { motion } from 'framer-motion';
+import { favoriteAPI } from '../services/api';
 
 const Wishlists = () => {
-  const wishlistItems = [
-    {
-      id: 1,
-      title: 'Luxury Villa with Ocean View',
-      location: 'Malibu, California',
-      image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80',
-      price: 45000,
-      rating: 4.95,
-      guests: 8,
-      bedrooms: 4,
-      beds: 5,
-      featured: true,
-    },
-    {
-      id: 2,
-      title: 'Cozy Mountain Cabin',
-      location: 'Aspen, Colorado',
-      image: 'https://images.unsplash.com/photo-1542718610-a1d656d1884c?w=800&q=80',
-      price: 27500,
-      rating: 4.88,
-      guests: 6,
-      bedrooms: 3,
-      beds: 4,
-    },
-  ];
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      setLoading(true);
+      try {
+        const { data } = await favoriteAPI.getUserFavorites();
+        console.log('Favorites response:', data);
+        const favorites = data?.data || data?.favorites || [];
+        setWishlistItems(favorites);
+      } catch (error) {
+        console.error('Error fetching favorites:', error);
+        toast.error('Failed to load your wishlist');
+        setWishlistItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFavorites();
+  }, []);
 
   return (
     <div style={{ paddingTop: '100px', minHeight: '100vh' }}>
@@ -46,13 +44,17 @@ const Wishlists = () => {
           </div>
         </MotionWrapper>
 
-        {wishlistItems.length > 0 ? (
+        {!loading && wishlistItems.length > 0 ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--spacing-xl)' }}>
             {wishlistItems.map((listing, index) => (
-              <MotionWrapper key={listing.id} delay={index * 0.1}>
+              <MotionWrapper key={listing._id || listing.id} delay={index * 0.1}>
                 <ListingCard listing={listing} />
               </MotionWrapper>
             ))}
+          </div>
+        ) : loading ? (
+          <div style={{ textAlign: 'center', padding: 'var(--spacing-3xl)' }}>
+            <p style={{ color: 'var(--text-secondary)' }}>Loading your favorites...</p>
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: 'var(--spacing-3xl)' }}>

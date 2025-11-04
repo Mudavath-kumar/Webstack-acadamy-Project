@@ -1,15 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  User, Mail, Phone, MapPin, Camera, Save, Lock, Bell, Trash2, Edit2,
-  Calendar, Home, DollarSign, Clock, CheckCircle, XCircle, AlertCircle,
-  CreditCard, Download, Star, MessageCircle, TrendingUp, BarChart
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    Bell,
+    Calendar,
+    Camera,
+    CheckCircle,
+    Clock,
+    DollarSign,
+    Download,
+    Edit2,
+    Lock,
+    Mail,
+    MapPin,
+    Phone,
+    Save,
+    User,
+    XCircle
 } from 'lucide-react';
-import { userAPI, bookingAPI } from '../services/api';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { updatePassword } from '../store/slices/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
 import MotionWrapper from '../components/MotionWrapper';
+import { bookingAPI, userAPI } from '../services/api';
+import { updatePassword } from '../store/slices/authSlice';
 
 const ProfileEnhanced = () => {
   const { user } = useSelector((state) => state.auth);
@@ -529,7 +541,9 @@ const ProfileEnhanced = () => {
                                 </h3>
                                 <p style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
                                   <MapPin size={14} />
-                                  {booking.property.location}
+                                  {typeof booking.property.location === 'string' 
+                                    ? booking.property.location 
+                                    : `${booking.property.location?.city || ''}, ${booking.property.location?.country || ''}`.trim() || 'Location unavailable'}
                                 </p>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                   {booking.checkIn} to {booking.checkOut} • {booking.guests} guests
@@ -593,7 +607,9 @@ const ProfileEnhanced = () => {
                                     </h3>
                                     <p style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)' }}>
                                       <MapPin size={16} />
-                                      {booking.property.location}
+                                      {typeof booking.property.location === 'string' 
+                                        ? booking.property.location 
+                                        : `${booking.property.location?.city || ''}, ${booking.property.location?.country || ''}`.trim() || 'Location unavailable'}
                                     </p>
                                   </div>
                                   {getStatusBadge(booking.status)}

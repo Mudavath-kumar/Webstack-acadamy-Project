@@ -1,14 +1,20 @@
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, MapPin, Users, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import ConfirmDialog from '../components/ConfirmDialog';
 import MotionWrapper from '../components/MotionWrapper';
 import { bookingAPI } from '../services/api';
 
 const Trips = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState(null);
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -57,6 +63,73 @@ const Trips = () => {
   }, [bookings]);
 
   const trips = activeTab === 'upcoming' ? upcomingTrips : pastTrips;
+
+  const openCancelDialog = (booking) => {
+    setBookingToCancel(booking);
+    setShowCancelDialog(true);
+  };
+
+  const handleCancelBooking = async () => {
+    if (!bookingToCancel) return;
+    
+    setCancellingId(bookingToCancel.id);
+    try {
+      const response = await bookingAPI.cancelBooking(bookingToCancel.id);
+      toast.success('✅ Booking cancelled successfully!');
+      setShowCancelDialog(false);
+      setBookingToCancel(null);
+      // Refresh bookings
+      const res = await bookingAPI.getUserBookings();
+      if (res.data?.success) {
+        setBookings(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to cancel booking:', err);
+      
+      // Extract detailed error message
+      let errorMessage = '❌ Failed to cancel booking.';
+      
+      if (err.response) {
+        // Server responded with error status
+        const serverMessage = err.response.data?.message;
+        
+        if (err.response.status === 404) {
+          errorMessage = '❌ Booking not found. It may have already been cancelled.';
+        } else if (err.response.status === 403) {
+          errorMessage = '❌ You are not authorized to cancel this booking.';
+        } else if (err.response.status === 400) {
+          if (serverMessage?.includes('24 hours')) {
+            errorMessage = '⏰ Cannot cancel booking less than 24 hours before check-in.';
+          } else if (serverMessage?.includes('already cancelled')) {
+            errorMessage = '❌ This booking has already been cancelled.';
+          } else {
+            errorMessage = `❌ ${serverMessage || 'Cannot cancel this booking.'}`;
+          }
+        } else if (serverMessage) {
+          errorMessage = `❌ ${serverMessage}`;
+        }
+      } else if (err.request) {
+        // Request made but no response received
+        errorMessage = '🌐 Network error. Please check your internet connection.';
+      } else {
+        // Something else went wrong
+        errorMessage = `❌ ${err.message || 'An unexpected error occurred.'}`;
+      }
+      
+      toast.error(errorMessage, { duration: 5000 });
+      setShowCancelDialog(false);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const handleViewProperty = (propertyId) => {
+    if (propertyId) {
+      navigate(`/listing/${propertyId}`);
+    } else {
+      toast.error('Property details not available');
+    }
+  };
 
   return (
     <div style={{ paddingTop: '100px', minHeight: '100vh' }}>
@@ -120,7 +193,9 @@ const Trips = () => {
                       </h3>
                       <p style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)' }}>
                         <MapPin size={16} />
-                        {trip.location}
+                        {typeof trip.location === 'string' 
+                          ? trip.location 
+                          : `${trip.location?.city || ''}, ${trip.location?.country || ''}`.trim() || 'Location unavailable'}
                       </p>
                     </div>
                     <span style={{ padding: '0.5rem 1rem', borderRadius: 'var(--radius-full)', background: trip.status === 'Confirmed' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(148, 163, 184, 0.1)', color: trip.status === 'Confirmed' ? '#22C55E' : '#64748B', fontSize: '0.85rem', fontWeight: '600' }}>
@@ -152,15 +227,36 @@ const Trips = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="btn-primary"
                       style={{ padding: '0.75rem 1.5rem' }}
+                      onClick={() => handleViewProperty(trip.propertyId)}
                     >
-                      View Details
+                      View Property
                     </motion.button>
+                    {activeTab === 'upcoming' && (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="btn-outline"
+                        style={{ 
+                          padding: '0.75rem 1.5rem',
+                          borderColor: '#ef4444',
+                          color: '#ef4444',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                        onClick={() => openCancelDialog(trip)}
+                        disabled={cancellingId === trip.id}
+                      >
+                        <X size={18} />
+                        {cancellingId === trip.id ? 'Cancelling...' : 'Cancel Booking'}
+                      </motion.button>
+                    )}
                     {activeTab === 'past' && (
                       <motion.button
                         whileHover={{ scale: 1.02 }}
@@ -197,6 +293,21 @@ const Trips = () => {
           </div>
         )}
       </div>
+
+      {/* Cancel Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => {
+          setShowCancelDialog(false);
+          setBookingToCancel(null);
+        }}
+        onConfirm={handleCancelBooking}
+        title="Cancel Booking?"
+        message={bookingToCancel ? `Are you sure you want to cancel your booking at ${bookingToCancel.title}? This action cannot be undone.` : ''}
+        confirmText="Yes, Cancel Booking"
+        cancelText="Keep Booking"
+        isLoading={cancellingId === bookingToCancel?.id}
+      />
 
       <style>{`
         @media (max-width: 768px) {

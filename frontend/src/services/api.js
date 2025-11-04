@@ -99,3 +99,10 @@ export const otpAPI = {
   verify: (data) => api.post('/otp/verify', data),
   resend: (data) => api.post('/otp/resend', data),
 };
+
+export const favoriteAPI = {
+  getUserFavorites: () => api.get('/favorites'),
+  addFavorite: (propertyId) => api.post('/favorites', { propertyId }),
+  removeFavorite: (propertyId) => api.delete(`/favorites/${propertyId}`),
+  checkFavorite: (propertyId) => api.get(`/favorites/check/${propertyId}`),
+};

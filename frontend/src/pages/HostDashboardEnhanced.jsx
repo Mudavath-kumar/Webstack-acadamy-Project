@@ -472,7 +472,9 @@ const HostDashboardEnhanced = () => {
                           </div>
                           <p style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 'var(--spacing-md)' }}>
                             <MapPin size={14} />
-                            {property.location}
+                            {typeof property.location === 'object' 
+                              ? `${property.location.city || ''}, ${property.location.country || ''}`.trim() || 'Location not specified'
+                              : property.location || 'Location not specified'}
                           </p>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)', fontSize: '0.85rem' }}>
                             <div>
@@ -539,7 +541,9 @@ const HostDashboardEnhanced = () => {
                             </div>
                             <p style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
                               <MapPin size={16} />
-                              {property.location}
+                              {typeof property.location === 'object' 
+                                ? `${property.location.city || ''}, ${property.location.country || ''}`.trim() || 'Location not specified'
+                                : property.location || 'Location not specified'}
                             </p>
                             <div style={{ display: 'flex', gap: 'var(--spacing-xl)' }}>
                               <div>
