@@ -1,6 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Home, TrendingUp, Users, Plus } from 'lucide-react';
+import { DollarSign, Home, Plus, TrendingUp, Users } from 'lucide-react';
 import MotionWrapper from '../components/MotionWrapper';
 
 const HostDashboard = () => {
@@ -95,7 +94,11 @@ const HostDashboard = () => {
                   <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem' }}>
                     {listing.title}
                   </h3>
-                  <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>{listing.location}</p>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+                    {typeof listing.location === 'object' 
+                      ? `${listing.location.city || ''}, ${listing.location.country || ''}`.trim() || 'Location not specified'
+                      : listing.location || 'Location not specified'}
+                  </p>
                   <div style={{ display: 'flex', gap: 'var(--spacing-xl)' }}>
                     <div>
                       <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Bookings</span>

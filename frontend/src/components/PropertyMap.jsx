@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { MapPin, Navigation, ZoomIn, ZoomOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Navigation, ZoomIn, ZoomOut } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
 
 /**
  * PropertyMap Component
@@ -204,7 +204,9 @@ const PropertyMap = ({ properties = [], onPropertySelect, center, zoom = 12 }) =
                   {selectedProperty.title}
                 </h3>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                  {selectedProperty.location}
+                  {typeof selectedProperty.location === 'object' 
+                    ? `${selectedProperty.location.city || ''}, ${selectedProperty.location.country || ''}`.trim() || 'Location not specified'
+                    : selectedProperty.location || 'Location not specified'}
                 </p>
                 <p style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--primary)' }}>
                   ₹{selectedProperty.price?.toLocaleString()} / night

@@ -299,7 +299,7 @@ const MyProperties = () => {
                       className="btn-icon btn-view"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => navigate(`/properties/${property._id}`)}
+                      onClick={() => navigate(`/listing/${property._id}`)}
                     >
                       <Eye size={18} />
                       <span>View</span>

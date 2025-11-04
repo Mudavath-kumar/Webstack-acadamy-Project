@@ -5,18 +5,18 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0',
-    port: 3000,
-    strictPort: false,
+    host: true,
+    port: 3001,
+    strictPort: true,
     // Add the specific Clacky host that's being blocked
     allowedHosts: [
-      '3000-b9e2753da0f9-web.clackypaas.com',
+      '3001-b9e2753da0f9-web.clackypaas.com',
       '.clackypaas.com',
       'localhost',
       '127.0.0.1',
     ],
     hmr: {
-      clientPort: 3000,
+      clientPort: 3001,
     },
     proxy: {
       '/api': {

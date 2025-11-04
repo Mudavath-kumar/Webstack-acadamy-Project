@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
+import '../../styles/HostDashboard.css';
 
 const AMENITIES_LIST = [
   'WiFi',
@@ -200,7 +201,26 @@ const PropertyForm = () => {
 
     try {
       const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
       const base = import.meta.env.VITE_API_URL || '/api/v1';
+
+      // Verify authentication
+      if (!token) {
+        toast.error('❌ Please login first');
+        navigate('/login');
+        return;
+      }
+
+      // Verify user is a host
+      if (user.role !== 'host') {
+        toast.error('❌ Only hosts can create properties. Your role: ' + (user.role || 'unknown'));
+        console.log('User object:', user);
+        return;
+      }
+
+      console.log('✅ Authentication check passed');
+      console.log('User role:', user.role);
+      console.log('Token exists:', !!token);
 
       // Upload images if new files exist
       let imageUrls = [...(formData.images || [])];
@@ -235,16 +255,26 @@ const PropertyForm = () => {
         });
         toast.success('Property updated successfully');
       } else {
-        await axios.post(`${base}/properties`, payload, {
+        console.log('Creating property with URL:', `${base}/properties`);
+        console.log('Token exists:', !!token);
+        console.log('Payload:', payload);
+        
+        const response = await axios.post(`${base}/properties`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        
+        console.log('Property creation response:', response.data);
         toast.success('Property created successfully');
       }
 
       navigate('/host/properties');
     } catch (error) {
-      console.error('Error saving property:', error);
-      toast.error(error.response?.data?.message || 'Failed to save property');
+      console.error('Full error object:', error);
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.response?.data?.message);
+      console.error('Request URL:', error.config?.url);
+      toast.error(error.response?.data?.message || error.message || 'Failed to save property');
     } finally {
       setLoading(false);
     }

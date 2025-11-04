@@ -2,6 +2,7 @@ import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import axios from 'axios';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+    Calendar,
     Car,
     ChevronLeft, ChevronRight,
     Facebook,
@@ -23,12 +24,13 @@ import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
+import ConfirmDialog from '../components/ConfirmDialog';
 import HostCard from '../components/HostCard';
 import ListingCard from '../components/ListingCard';
 import MotionWrapper from '../components/MotionWrapper';
 import ReviewCard from '../components/ReviewCard';
 import ScrollToTop from '../components/ScrollToTop';
-import { propertyAPI } from '../services/api';
+import { bookingAPI, propertyAPI } from '../services/api';
 import '../styles/ListingDetailEnhanced.css';
 
 const ListingDetailEnhanced = () => {
@@ -49,6 +51,9 @@ const ListingDetailEnhanced = () => {
   const [mapLoading, setMapLoading] = useState(true);
   const [showShareTooltip, setShowShareTooltip] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [userBooking, setUserBooking] = useState(null);
+  const [cancellingBooking, setCancellingBooking] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   
   const similarScrollRef = useRef(null);
 
@@ -82,30 +87,135 @@ const ListingDetailEnhanced = () => {
     const fetchProperty = async () => {
       setLoading(true);
       try {
+        console.log('Fetching property with ID:', id);
         const { data } = await propertyAPI.getOne(id);
+        console.log('Property API response:', data);
         const prop = data?.data || data;
         
-        if (!prop) {
+        if (!prop || !prop._id) {
+          console.error('Invalid property data received:', prop);
           throw new Error('Property not found');
         }
         
+        console.log('Property loaded successfully:', prop.title);
         setProperty(prop);
         setGuests(1); // Default guests
         setFavoriteCount(prop.favoriteCount || 0);
         setShareCount(prop.shareCount || 0);
       } catch (error) {
         console.error('Error fetching property:', error);
-        toast.error('Property not found. Please pick a real property from Explore.');
-        navigate('/explore');
+        console.error('Property ID that failed:', id);
+        toast.error('😔 Oops! This property doesn\'t exist or was removed.');
+        setTimeout(() => navigate('/explore'), 2000);
       } finally {
         setLoading(false);
       }
     };
 
     if (id) {
+      // Validate ID format (MongoDB ObjectId is 24 hex characters)
+      if (id.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(id)) {
+        console.error('Invalid property ID format:', id);
+        toast.error('😔 Invalid property ID. Redirecting to explore...');
+        setTimeout(() => navigate('/explore'), 2000);
+        setLoading(false);
+        return;
+      }
       fetchProperty();
     }
   }, [id, navigate]);
+
+  // Check if user has an active booking for this property
+  useEffect(() => {
+    const checkUserBooking = async () => {
+      if (!isAuthenticated || !id) return;
+      
+      try {
+        const { data } = await bookingAPI.getUserBookings();
+        const bookings = data?.data || [];
+        
+        // Find active booking for this property
+        const activeBooking = bookings.find(
+          booking => 
+            booking.property?._id === id && 
+            booking.status !== 'cancelled' &&
+            new Date(booking.checkOut) > new Date()
+        );
+        
+        if (activeBooking) {
+          setUserBooking(activeBooking);
+        }
+      } catch (error) {
+        console.error('Error checking user booking:', error);
+      }
+    };
+    
+    checkUserBooking();
+  }, [id, isAuthenticated]);
+
+  const openCancelDialog = () => {
+    setShowCancelDialog(true);
+  };
+
+  const handleCancelBooking = async () => {
+    if (!userBooking) return;
+    
+    setCancellingBooking(true);
+    try {
+      const response = await bookingAPI.cancelBooking(userBooking._id);
+      toast.success('✅ Booking cancelled successfully!');
+      setShowCancelDialog(false);
+      setUserBooking(null);
+      // Refresh bookings
+      const { data } = await bookingAPI.getUserBookings();
+      const bookings = data?.data || [];
+      const activeBooking = bookings.find(
+        booking => 
+          booking.property?._id === id && 
+          booking.status !== 'cancelled' &&
+          new Date(booking.checkOut) > new Date()
+      );
+      setUserBooking(activeBooking || null);
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      
+      // Extract detailed error message
+      let errorMessage = '❌ Failed to cancel booking.';
+      
+      if (error.response) {
+        // Server responded with error status
+        const serverMessage = error.response.data?.message;
+        
+        if (error.response.status === 404) {
+          errorMessage = '❌ Booking not found. It may have already been cancelled.';
+        } else if (error.response.status === 403) {
+          errorMessage = '❌ You are not authorized to cancel this booking.';
+        } else if (error.response.status === 400) {
+          if (serverMessage?.includes('24 hours')) {
+            errorMessage = '⏰ Cannot cancel booking less than 24 hours before check-in.';
+          } else if (serverMessage?.includes('already cancelled')) {
+            errorMessage = '❌ This booking has already been cancelled.';
+          } else {
+            errorMessage = `❌ ${serverMessage || 'Cannot cancel this booking.'}`;
+          }
+        } else if (serverMessage) {
+          errorMessage = `❌ ${serverMessage}`;
+        }
+      } else if (error.request) {
+        // Request made but no response received
+        errorMessage = '🌐 Network error. Please check your internet connection.';
+      } else {
+        // Something else went wrong
+        errorMessage = `❌ ${error.message || 'An unexpected error occurred.'}`;
+      }
+      
+      toast.error(errorMessage, { duration: 5000 });
+      setShowCancelDialog(false);
+    } finally {
+      setCancellingBooking(false);
+    }
+  };
+
 
   // Normalize property data for display
   const listing = property ? {
@@ -114,8 +224,8 @@ const ListingDetailEnhanced = () => {
     title: property.title,
     location: `${property.location.city}, ${property.location.country}`,
     price: property.pricing?.basePrice || 0,
-    rating: property.rating?.average || 0,
-    reviews: property.rating?.count || 0,
+    rating: typeof property.rating === 'object' ? (property.rating?.average || 0) : (property.rating || 0),
+    reviews: typeof property.rating === 'object' ? (property.rating?.count || 0) : 0,
     guests: property.capacity?.guests || 1,
     bedrooms: property.capacity?.bedrooms || 0,
     beds: property.capacity?.beds || 0,
@@ -619,12 +729,18 @@ const ListingDetailEnhanced = () => {
                         />
                       </motion.div>
                     ))}
-                    <span style={{ fontWeight: '600', marginLeft: '0.25rem' }}>{listing.rating}</span>
+                    <span style={{ fontWeight: '600', marginLeft: '0.25rem' }}>
+                      {typeof listing.rating === 'number' ? listing.rating.toFixed(1) : '0.0'}
+                    </span>
                     <span style={{ color: 'var(--text-secondary)' }}>({listing.reviews} reviews)</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
                     <MapPin size={18} />
-                    <span style={{ fontWeight: '500' }}>{listing.location}</span>
+                    <span style={{ fontWeight: '500' }}>
+                      {typeof listing.location === 'string' 
+                        ? listing.location 
+                        : `${listing.location?.city || ''}, ${listing.location?.country || ''}`.trim() || 'Location unavailable'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -755,7 +871,11 @@ const ListingDetailEnhanced = () => {
                   style={{ marginTop: 'var(--spacing-md)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <MapPin size={18} />
-                  <span style={{ fontWeight: '500' }}>{listing.location}</span>
+                  <span style={{ fontWeight: '500' }}>
+                    {typeof listing.location === 'string' 
+                      ? listing.location 
+                      : `${listing.location?.city || ''}, ${listing.location?.country || ''}`.trim() || 'Location unavailable'}
+                  </span>
                 </motion.p>
               </div>
             </MotionWrapper>
@@ -830,6 +950,95 @@ const ListingDetailEnhanced = () => {
               ) : (
                 /* Guest View - Can Book (real listings only) */
                 <>
+              {/* Show existing booking notification if user has already booked */}
+              {userBooking && (() => {
+                const checkInDate = new Date(userBooking.checkIn);
+                const now = new Date();
+                const hoursUntilCheckIn = (checkInDate - now) / (1000 * 60 * 60);
+                const canCancel = hoursUntilCheckIn >= 24;
+                
+                return (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    padding: 'var(--spacing-md)',
+                    marginBottom: 'var(--spacing-lg)',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    borderRadius: 'var(--radius-lg)',
+                    color: 'white',
+                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <Calendar size={18} />
+                    <strong>You have an active booking!</strong>
+                  </div>
+                  <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.95 }}>
+                    Check-in: <strong>{new Date(userBooking.checkIn).toLocaleDateString()}</strong>
+                  </div>
+                  <div style={{ fontSize: '0.9rem', marginBottom: '0.75rem', opacity: 0.95 }}>
+                    Check-out: <strong>{new Date(userBooking.checkOut).toLocaleDateString()}</strong>
+                  </div>
+                  
+                  {!canCancel && (
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      marginBottom: '0.75rem', 
+                      padding: '0.5rem', 
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      borderRadius: 'var(--radius-sm)',
+                      opacity: 0.95 
+                    }}>
+                      ⏰ Cancellation not available (less than 24 hours to check-in)
+                    </div>
+                  )}
+                  
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => navigate('/trips')}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem 1rem',
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      View Details
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: canCancel ? 1.02 : 1 }}
+                      whileTap={{ scale: canCancel ? 0.98 : 1 }}
+                      onClick={canCancel ? openCancelDialog : null}
+                      disabled={cancellingBooking || !canCancel}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem 1rem',
+                        background: !canCancel ? 'rgba(255, 255, 255, 0.1)' : (cancellingBooking ? 'rgba(255, 255, 255, 0.1)' : 'rgba(239, 68, 68, 0.9)'),
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        cursor: !canCancel || cancellingBooking ? 'not-allowed' : 'pointer',
+                        opacity: !canCancel || cancellingBooking ? 0.6 : 1,
+                      }}
+                      title={!canCancel ? 'Cannot cancel less than 24 hours before check-in' : ''}
+                    >
+                      {cancellingBooking ? 'Cancelling...' : 'Cancel Booking'}
+                    </motion.button>
+                  </div>
+                </motion.div>
+                );
+              })()}
+              
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: 'var(--spacing-sm)' }}>
                   <span className="price-display">₹{listing.price.toLocaleString()}</span>
@@ -837,7 +1046,9 @@ const ListingDetailEnhanced = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                   <Star size={14} fill="#FFD700" color="#FFD700" />
-                  <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{listing.rating}</span>
+                  <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                    {typeof listing.rating === 'number' ? listing.rating.toFixed(1) : '0.0'}
+                  </span>
                   <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>({listing.reviews} reviews)</span>
                 </div>
               </div>
@@ -939,6 +1150,18 @@ const ListingDetailEnhanced = () => {
 
       {/* Scroll to Top Button */}
       <ScrollToTop />
+
+      {/* Cancel Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={handleCancelBooking}
+        title="Cancel Your Booking?"
+        message={userBooking ? `Are you sure you want to cancel your booking from ${new Date(userBooking.checkIn).toLocaleDateString()} to ${new Date(userBooking.checkOut).toLocaleDateString()}?\n\nCancellation Policy: Free cancellation up to 24 hours before check-in. This action cannot be undone.` : ''}
+        confirmText="Yes, Cancel Booking"
+        cancelText="Keep Booking"
+        isLoading={cancellingBooking}
+      />
 
       <style>{`
         @media (max-width: 968px) {

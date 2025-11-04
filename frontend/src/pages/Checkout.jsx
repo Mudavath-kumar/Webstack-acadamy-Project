@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, Lock, Calendar, Users, MapPin } from 'lucide-react';
+import { Calendar, CreditCard, Lock, MapPin, Users } from 'lucide-react';
+import { useState } from 'react';
 import MotionWrapper from '../components/MotionWrapper';
 
 const Checkout = () => {
@@ -160,7 +160,9 @@ const Checkout = () => {
                 </h3>
                 <p style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 'var(--spacing-lg)' }}>
                   <MapPin size={14} />
-                  {booking.location}
+                  {typeof booking.location === 'object' 
+                    ? `${booking.location.city || ''}, ${booking.location.country || ''}`.trim() || 'Location not specified'
+                    : booking.location || 'Location not specified'}
                 </p>
 
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)' }}>
