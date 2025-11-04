@@ -54,3 +54,4 @@ server/
 # Old files
 *.old
 *.bak
+.vercel
