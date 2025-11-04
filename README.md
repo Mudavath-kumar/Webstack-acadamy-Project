@@ -1,5 +1,12 @@
 # 🏠 HomelyHub - Premium Home Rental Platform
 
+
+
+
+https://github.com/user-attachments/assets/bc8cef6a-194f-4367-bbc7-38e2f582c675
+
+
+
 A modern full-stack MERN application for property rentals with host dashboard and booking system.
 
 ![Tech Stack](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
